@@ -765,6 +765,84 @@ const ProjectManagementPlatform = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportProjectData = () => {
+    const dataToExport = {
+      selectedMethodology,
+      currentStep,
+      tasks,
+      taskNotes,
+      taskDueDates,
+      taskAssignees,
+      selectedPhase,
+      expandedGroups,
+      teamMembers,
+      exportedAt: new Date().toISOString(),
+      version: '2.0.0'
+    };
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    a.download = `ProjectGuide_Backup_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importProjectData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+
+        // Restore all state from imported data
+        if (importedData.selectedMethodology) setSelectedMethodology(importedData.selectedMethodology);
+        if (importedData.currentStep) setCurrentStep(importedData.currentStep);
+        if (importedData.tasks) setTasks(importedData.tasks);
+        if (importedData.taskNotes) setTaskNotes(importedData.taskNotes);
+        if (importedData.taskDueDates) setTaskDueDates(importedData.taskDueDates);
+        if (importedData.taskAssignees) setTaskAssignees(importedData.taskAssignees);
+        if (importedData.selectedPhase) setSelectedPhase(importedData.selectedPhase);
+        if (importedData.expandedGroups) setExpandedGroups(importedData.expandedGroups);
+        if (importedData.teamMembers) setTeamMembers(importedData.teamMembers);
+
+        alert('✅ Project data imported successfully!');
+      } catch (error) {
+        console.error('Error importing data:', error);
+        alert('❌ Error importing data. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const clearAllData = () => {
+    if (window.confirm('⚠️ Are you sure you want to clear all project data? This action cannot be undone.')) {
+      // Clear localStorage
+      localStorage.removeItem('projectGuideData');
+
+      // Reset all state
+      setSelectedMethodology(null);
+      setCurrentStep('landing');
+      setTasks({});
+      setTaskNotes({});
+      setTaskDueDates({});
+      setTaskAssignees({});
+      setSelectedPhase(null);
+      setExpandedGroups({});
+      setViewMode('board');
+      setSearchTerm('');
+      setFilterKnowledgeArea('all');
+
+      alert('✅ All project data has been cleared.');
+    }
+  };
+
   // Landing Page
   if (currentStep === 'landing') {
     return (
@@ -1146,7 +1224,7 @@ const ProjectManagementPlatform = () => {
               </div>
               <button
                 onClick={() => {
-                  if (confirm('Return to home? Your progress will be saved automatically.')) {
+                  if (window.confirm('Return to home? Your progress will be saved automatically.')) {
                     setCurrentStep('landing');
                   }
                 }}
