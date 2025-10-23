@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, List, BookOpen, ChevronRight, ChevronDown, Plus, Filter, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle } from 'lucide-react';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -525,6 +525,7 @@ const ProjectManagementPlatform = () => {
       });
       setTasks(initialTasks);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMethodology]);
 
   // Load data from localStorage on component mount
