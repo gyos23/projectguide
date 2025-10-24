@@ -545,11 +545,11 @@ const ProjectManagementPlatform = () => {
         if (parsed.selectedPhase) setSelectedPhase(parsed.selectedPhase);
         if (parsed.expandedGroups) setExpandedGroups(parsed.expandedGroups);
         if (parsed.teamMembers) setTeamMembers(parsed.teamMembers);
-        
-        console.log('✅ Project data loaded successfully');
       }
     } catch (error) {
-      console.error('❌ Error loading saved data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error loading saved data:', error);
+      }
       // If there's an error, we'll start fresh
     }
   }, []);
@@ -571,9 +571,10 @@ const ProjectManagementPlatform = () => {
 
     try {
       localStorage.setItem('projectGuideData', JSON.stringify(dataToSave));
-      console.log('💾 Project data saved automatically');
     } catch (error) {
-      console.error('❌ Error saving data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error saving data:', error);
+      }
     }
   }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers]);
 
@@ -815,7 +816,9 @@ const ProjectManagementPlatform = () => {
 
         alert('✅ Project data imported successfully!');
       } catch (error) {
-        console.error('Error importing data:', error);
+        if (import.meta.env.DEV) {
+          console.error('Error importing data:', error);
+        }
         alert('❌ Error importing data. Please check the file format.');
       }
     };
