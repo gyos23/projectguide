@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, List, BookOpen, ChevronRight, ChevronDown, Plus, Filter, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft } from 'lucide-react';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -16,6 +16,7 @@ const ProjectManagementPlatform = () => {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showResourceModal, setShowResourceModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [taskNotes, setTaskNotes] = useState({});
   const [taskDueDates, setTaskDueDates] = useState({});
   const [taskAssignees, setTaskAssignees] = useState({});
@@ -26,6 +27,9 @@ const ProjectManagementPlatform = () => {
     { id: 4, name: 'Lisa Rodriguez', role: 'Quality Assurance', email: 'lisa.r@company.com' },
     { id: 5, name: 'David Kim', role: 'Stakeholder', email: 'david.kim@company.com' }
   ]);
+  const [darkMode, setDarkMode] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
 
   // Methodology configurations
   const methodologies = {
@@ -525,6 +529,7 @@ const ProjectManagementPlatform = () => {
       });
       setTasks(initialTasks);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMethodology]);
 
   // Load data from localStorage on component mount
@@ -544,11 +549,12 @@ const ProjectManagementPlatform = () => {
         if (parsed.selectedPhase) setSelectedPhase(parsed.selectedPhase);
         if (parsed.expandedGroups) setExpandedGroups(parsed.expandedGroups);
         if (parsed.teamMembers) setTeamMembers(parsed.teamMembers);
-        
-        console.log('✅ Project data loaded successfully');
+        if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
       }
     } catch (error) {
-      console.error('❌ Error loading saved data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error loading saved data:', error);
+      }
       // If there's an error, we'll start fresh
     }
   }, []);
@@ -565,16 +571,27 @@ const ProjectManagementPlatform = () => {
       selectedPhase,
       expandedGroups,
       teamMembers,
+      darkMode,
       lastSaved: new Date().toISOString()
     };
 
     try {
       localStorage.setItem('projectGuideData', JSON.stringify(dataToSave));
-      console.log('💾 Project data saved automatically');
     } catch (error) {
-      console.error('❌ Error saving data:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error saving data:', error);
+      }
     }
-  }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers]);
+  }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers, darkMode]);
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   const toggleTask = (taskId) => {
     setTasks(prev => ({
@@ -765,12 +782,92 @@ const ProjectManagementPlatform = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportProjectData = () => {
+    const dataToExport = {
+      selectedMethodology,
+      currentStep,
+      tasks,
+      taskNotes,
+      taskDueDates,
+      taskAssignees,
+      selectedPhase,
+      expandedGroups,
+      teamMembers,
+      exportedAt: new Date().toISOString(),
+      version: '2.0.0'
+    };
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    a.download = `ProjectGuide_Backup_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importProjectData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+
+        // Restore all state from imported data
+        if (importedData.selectedMethodology) setSelectedMethodology(importedData.selectedMethodology);
+        if (importedData.currentStep) setCurrentStep(importedData.currentStep);
+        if (importedData.tasks) setTasks(importedData.tasks);
+        if (importedData.taskNotes) setTaskNotes(importedData.taskNotes);
+        if (importedData.taskDueDates) setTaskDueDates(importedData.taskDueDates);
+        if (importedData.taskAssignees) setTaskAssignees(importedData.taskAssignees);
+        if (importedData.selectedPhase) setSelectedPhase(importedData.selectedPhase);
+        if (importedData.expandedGroups) setExpandedGroups(importedData.expandedGroups);
+        if (importedData.teamMembers) setTeamMembers(importedData.teamMembers);
+
+        alert('✅ Project data imported successfully!');
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('Error importing data:', error);
+        }
+        alert('❌ Error importing data. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const clearAllData = () => {
+    if (window.confirm('⚠️ Are you sure you want to clear all project data? This action cannot be undone.')) {
+      // Clear localStorage
+      localStorage.removeItem('projectGuideData');
+
+      // Reset all state
+      setSelectedMethodology(null);
+      setCurrentStep('landing');
+      setTasks({});
+      setTaskNotes({});
+      setTaskDueDates({});
+      setTaskAssignees({});
+      setSelectedPhase(null);
+      setExpandedGroups({});
+      setViewMode('board');
+      setSearchTerm('');
+      setFilterKnowledgeArea('all');
+
+      alert('✅ All project data has been cleared.');
+    }
+  };
+
   // Landing Page
   if (currentStep === 'landing') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Navigation */}
-        <nav className="bg-white shadow-sm border-b">
+        <nav className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
@@ -781,7 +878,18 @@ const ProjectManagementPlatform = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <button 
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? (
+                    <Sun className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-700" />
+                  )}
+                </button>
+                <button
                   onClick={() => setCurrentStep('methodology')}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
@@ -795,13 +903,13 @@ const ProjectManagementPlatform = () => {
         {/* Hero Section */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               Project Management
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
                 Made Simple
               </span>
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
               The only project management platform that guides you through every step of your project journey. 
               Whether you're a seasoned PM or just starting out, we'll help you deliver successful projects using 
               proven methodologies and best practices.
@@ -1146,7 +1254,7 @@ const ProjectManagementPlatform = () => {
               </div>
               <button
                 onClick={() => {
-                  if (confirm('Return to home? Your progress will be saved automatically.')) {
+                  if (window.confirm('Return to home? Your progress will be saved automatically.')) {
                     setCurrentStep('landing');
                   }
                 }}
@@ -1170,7 +1278,18 @@ const ProjectManagementPlatform = () => {
                   <Calendar className="h-4 w-4" />
                 </button>
               </div>
-              <button className="p-2 hover:bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setShowDashboard(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="View Dashboard"
+              >
+                <BarChart3 className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Settings & Export"
+              >
                 <Settings className="h-5 w-5 text-gray-600" />
               </button>
             </div>
@@ -1491,38 +1610,236 @@ const ProjectManagementPlatform = () => {
               </div>
             )}
 
-            {/* Timeline View */}
+            {/* Calendar View */}
             {viewMode === 'timeline' && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="space-y-8">
-                  {methodology.phases.map((phase, phaseIdx) => (
-                    <div key={phase.id} className="relative">
-                      <div className="flex items-start">
-                        <div className="flex flex-col items-center mr-4">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            phaseIdx <= methodology.phases.findIndex(p => p.id === currentPhaseData.id)
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-300 text-gray-600'
-                          }`}>
-                            {phaseIdx + 1}
-                          </div>
-                          {phaseIdx < methodology.phases.length - 1 && (
-                            <div className="w-0.5 h-16 bg-gray-300 mt-2" />
-                          )}
-                        </div>
-                        <div className="flex-1 pb-8">
-                          <h4 className="font-semibold text-gray-900 mb-2">{phase.name}</h4>
-                          <div className="space-y-1">
-                            {phase.processGroups.map((group, groupIdx) => (
-                              <div key={groupIdx} className="text-sm text-gray-600">
-                                • {group.name} ({group.tasks.filter(t => tasks[t.id]?.status === 'completed').length}/{group.tasks.length} tasks)
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        const newDate = new Date(calendarDate);
+                        newDate.setMonth(newDate.getMonth() - 1);
+                        setCalendarDate(newDate);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => setCalendarDate(new Date())}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newDate = new Date(calendarDate);
+                        newDate.setMonth(newDate.getMonth() + 1);
+                        setCalendarDate(newDate);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronRight className="h-5 w-5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+                  {/* Day Headers */}
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="bg-gray-50 p-3 text-center text-sm font-semibold text-gray-700">
+                      {day}
                     </div>
                   ))}
+
+                  {/* Calendar Days */}
+                  {(() => {
+                    const year = calendarDate.getFullYear();
+                    const month = calendarDate.getMonth();
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const today = new Date();
+                    const isToday = (day) => {
+                      return today.getDate() === day &&
+                             today.getMonth() === month &&
+                             today.getFullYear() === year;
+                    };
+
+                    const days = [];
+
+                    // Empty cells before month starts
+                    for (let i = 0; i < firstDay; i++) {
+                      days.push(<div key={`empty-${i}`} className="bg-gray-50 p-3 min-h-[100px]" />);
+                    }
+
+                    // Days of the month
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const tasksForDay = Object.entries(tasks).filter(([id, task]) => {
+                        const dueDate = taskDueDates[id];
+                        return dueDate && dueDate.startsWith(dateStr);
+                      });
+
+                      days.push(
+                        <div
+                          key={day}
+                          onClick={() => {
+                            if (tasksForDay.length > 0) {
+                              setSelectedCalendarDate(dateStr);
+                            }
+                          }}
+                          className={`bg-white p-3 min-h-[100px] ${
+                            isToday(day) ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : ''
+                          } ${tasksForDay.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                        >
+                          <div className={`text-sm font-medium mb-2 ${
+                            isToday(day) ? 'text-blue-700' : 'text-gray-900'
+                          }`}>
+                            {day}
+                          </div>
+                          <div className="space-y-1">
+                            {tasksForDay.slice(0, 2).map(([id, task]) => {
+                              const assignee = taskAssignees[id] ? teamMembers.find(m => m.id === taskAssignees[id]) : null;
+                              return (
+                                <div
+                                  key={id}
+                                  className={`text-xs p-1 rounded truncate ${
+                                    task.status === 'completed'
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}
+                                  title={task.name}
+                                >
+                                  {task.name}
+                                </div>
+                              );
+                            })}
+                            {tasksForDay.length > 2 && (
+                              <div className="text-xs text-gray-500 font-medium">
+                                +{tasksForDay.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return days;
+                  })()}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-4 flex items-center justify-center space-x-6 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-blue-100 rounded"></div>
+                    <span className="text-gray-600">Pending Tasks</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-green-100 rounded"></div>
+                    <span className="text-gray-600">Completed Tasks</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-blue-50 ring-2 ring-blue-500 rounded"></div>
+                    <span className="text-gray-600">Today</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Task Details for Selected Date */}
+            {selectedCalendarDate && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Tasks for {new Date(selectedCalendarDate + 'T00:00:00').toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCalendarDate(null)}
+                      className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      {Object.entries(tasks)
+                        .filter(([id, task]) => {
+                          const dueDate = taskDueDates[id];
+                          return dueDate && dueDate.startsWith(selectedCalendarDate);
+                        })
+                        .map(([id, task]) => {
+                          const assignee = taskAssignees[id] ? teamMembers.find(m => m.id === taskAssignees[id]) : null;
+                          return (
+                            <div
+                              key={id}
+                              className={`p-4 border rounded-lg ${
+                                task.status === 'completed'
+                                  ? 'bg-green-50 border-green-200'
+                                  : 'bg-white border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={task.status === 'completed'}
+                                      onChange={() => toggleTask(id)}
+                                      className="h-5 w-5 rounded border-gray-300"
+                                    />
+                                    <h4 className={`font-medium ${
+                                      task.status === 'completed'
+                                        ? 'text-gray-500 line-through'
+                                        : 'text-gray-900'
+                                    }`}>
+                                      {task.name}
+                                    </h4>
+                                  </div>
+                                  <div className="ml-7 space-y-1">
+                                    <p className="text-sm text-gray-600">
+                                      <span className="font-medium">Knowledge Area:</span> {task.knowledgeArea}
+                                    </p>
+                                    {assignee && (
+                                      <p className="text-sm text-gray-600">
+                                        <span className="font-medium">Assigned to:</span> {assignee.name}
+                                      </p>
+                                    )}
+                                    {taskNotes[id] && (
+                                      <p className="text-sm text-gray-600">
+                                        <span className="font-medium">Notes:</span> {taskNotes[id]}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                  task.status === 'completed'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {task.status === 'completed' ? 'Completed' : 'Pending'}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1680,6 +1997,163 @@ const ProjectManagementPlatform = () => {
                   Unassign Task
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Progress Dashboard Modal */}
+        {showDashboard && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Project Dashboard</h2>
+                  <p className="text-sm text-gray-600 mt-1">{methodology.name}</p>
+                </div>
+                <button
+                  onClick={() => setShowDashboard(false)}
+                  className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Overall Progress Card */}
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">Overall Progress</h3>
+                      <p className="text-blue-100 text-sm">Total project completion</p>
+                    </div>
+                    <div className="text-4xl font-bold">{stats.percentage}%</div>
+                  </div>
+                  <div className="w-full bg-white bg-opacity-30 rounded-full h-4">
+                    <div
+                      className="bg-white h-4 rounded-full transition-all"
+                      style={{ width: `${stats.percentage}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold">{stats.completed}</div>
+                      <div className="text-sm text-blue-100">Completed</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">{stats.inProgress}</div>
+                      <div className="text-sm text-blue-100">In Progress</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold">{stats.total - stats.completed - stats.inProgress}</div>
+                      <div className="text-sm text-blue-100">To Do</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress by Phase */}
+                <div className="bg-white border rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Progress by Phase</h3>
+                  <div className="space-y-4">
+                    {methodology.phases.map(phase => {
+                      const phaseTasks = phase.processGroups.flatMap(g => g.tasks);
+                      const phaseCompleted = phaseTasks.filter(t => tasks[t.id]?.status === 'completed').length;
+                      const phaseTotal = phaseTasks.length;
+                      const phasePercentage = phaseTotal > 0 ? Math.round((phaseCompleted / phaseTotal) * 100) : 0;
+
+                      return (
+                        <div key={phase.id}>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-gray-700">{phase.name}</span>
+                            <span className="text-sm font-semibold text-gray-900">{phasePercentage}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all"
+                              style={{ width: `${phasePercentage}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{phaseCompleted} of {phaseTotal} tasks</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Knowledge Areas Breakdown */}
+                <div className="bg-white border rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Tasks by Knowledge Area</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {(() => {
+                      const knowledgeAreas = {};
+                      methodology.phases.forEach(phase => {
+                        phase.processGroups.forEach(group => {
+                          group.tasks.forEach(task => {
+                            const ka = task.knowledgeArea || 'Other';
+                            if (!knowledgeAreas[ka]) {
+                              knowledgeAreas[ka] = { total: 0, completed: 0 };
+                            }
+                            knowledgeAreas[ka].total++;
+                            if (tasks[task.id]?.status === 'completed') {
+                              knowledgeAreas[ka].completed++;
+                            }
+                          });
+                        });
+                      });
+
+                      return Object.entries(knowledgeAreas).map(([ka, data]) => {
+                        const percentage = Math.round((data.completed / data.total) * 100);
+                        return (
+                          <div key={ka} className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">{ka}</span>
+                              <span className="text-xs font-semibold text-gray-600">{percentage}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className="bg-blue-500 h-1.5 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{data.completed}/{data.total}</p>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Team Workload */}
+                <div className="bg-white border rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Workload</h3>
+                  <div className="space-y-3">
+                    {teamMembers.map(member => {
+                      const assignedTasks = Object.entries(tasks).filter(([id, _]) => taskAssignees[id] === member.id);
+                      const completedTasks = assignedTasks.filter(([id, task]) => task.status === 'completed').length;
+                      const totalAssigned = assignedTasks.length;
+
+                      return (
+                        <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">{member.name}</div>
+                              <div className="text-xs text-gray-500">{member.role}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-gray-900">{totalAssigned} tasks</div>
+                            <div className="text-xs text-gray-500">{completedTasks} completed</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
