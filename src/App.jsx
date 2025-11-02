@@ -12,6 +12,7 @@ const ProjectManagementPlatform = () => {
   const [showGuidance, setShowGuidance] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [filterKnowledgeArea, setFilterKnowledgeArea] = useState('all');
+  const [quickFilter, setQuickFilter] = useState('all');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showResourceModal, setShowResourceModal] = useState(false);
@@ -30,6 +31,13 @@ const ProjectManagementPlatform = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerTask, setDatePickerTask] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
 
   // Methodology configurations
   const methodologies = {
@@ -862,6 +870,53 @@ const ProjectManagementPlatform = () => {
     }
   };
 
+  const addTeamMember = () => {
+    if (!newMemberName.trim() || !newMemberRole.trim() || !newMemberEmail.trim()) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const newMember = {
+      id: Math.max(...teamMembers.map(m => m.id), 0) + 1,
+      name: newMemberName.trim(),
+      role: newMemberRole.trim(),
+      email: newMemberEmail.trim()
+    };
+
+    setTeamMembers(prev => [...prev, newMember]);
+    setNewMemberName('');
+    setNewMemberRole('');
+    setNewMemberEmail('');
+    setShowAddMember(false);
+  };
+
+  const removeTeamMember = (memberId) => {
+    const member = teamMembers.find(m => m.id === memberId);
+    const assignedCount = Object.values(taskAssignees).filter(id => id === memberId).length;
+
+    if (assignedCount > 0) {
+      if (!window.confirm(`${member.name} has ${assignedCount} assigned task(s). Remove anyway? Tasks will be unassigned.`)) {
+        return;
+      }
+      // Unassign all tasks
+      setTaskAssignees(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(taskId => {
+          if (updated[taskId] === memberId) {
+            delete updated[taskId];
+          }
+        });
+        return updated;
+      });
+    } else {
+      if (!window.confirm(`Remove ${member.name} from the team?`)) {
+        return;
+      }
+    }
+
+    setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+  };
+
   // Landing Page
   if (currentStep === 'landing') {
     return (
@@ -1423,7 +1478,61 @@ const ProjectManagementPlatform = () => {
                 </div>
               </div>
 
-              {/* Filters */}
+              {/* Quick Filters */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  onClick={() => setQuickFilter('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    quickFilter === 'all'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All Tasks
+                </button>
+                <button
+                  onClick={() => setQuickFilter('my-tasks')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    quickFilter === 'my-tasks'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  My Tasks
+                </button>
+                <button
+                  onClick={() => setQuickFilter('due-soon')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    quickFilter === 'due-soon'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Due This Week
+                </button>
+                <button
+                  onClick={() => setQuickFilter('overdue')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    quickFilter === 'overdue'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Overdue
+                </button>
+                <button
+                  onClick={() => setQuickFilter('no-date')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    quickFilter === 'no-date'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  No Due Date
+                </button>
+              </div>
+
+              {/* Search and Filters */}
               <div className="flex space-x-4 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -1435,7 +1544,7 @@ const ProjectManagementPlatform = () => {
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <select 
+                <select
                   value={filterKnowledgeArea}
                   onChange={(e) => setFilterKnowledgeArea(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1454,11 +1563,32 @@ const ProjectManagementPlatform = () => {
                 {currentPhaseData.processGroups.map((group, idx) => {
                   const filteredTasks = group.tasks.filter(task => {
                     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesFilter = filterKnowledgeArea === 'all' || task.knowledgeArea === filterKnowledgeArea;
-                    return matchesSearch && matchesFilter;
+                    const matchesKA = filterKnowledgeArea === 'all' || task.knowledgeArea === filterKnowledgeArea;
+
+                    // Quick filter logic
+                    let matchesQuickFilter = true;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const oneWeek = new Date(today);
+                    oneWeek.setDate(oneWeek.getDate() + 7);
+
+                    if (quickFilter === 'my-tasks') {
+                      // For demo, we'll use first team member. In real app, use logged-in user
+                      matchesQuickFilter = taskAssignees[task.id] === teamMembers[0].id;
+                    } else if (quickFilter === 'due-soon') {
+                      const dueDate = taskDueDates[task.id] ? new Date(taskDueDates[task.id]) : null;
+                      matchesQuickFilter = dueDate && dueDate >= today && dueDate <= oneWeek;
+                    } else if (quickFilter === 'overdue') {
+                      const dueDate = taskDueDates[task.id] ? new Date(taskDueDates[task.id]) : null;
+                      matchesQuickFilter = dueDate && dueDate < today && tasks[task.id]?.status !== 'completed';
+                    } else if (quickFilter === 'no-date') {
+                      matchesQuickFilter = !taskDueDates[task.id];
+                    }
+
+                    return matchesSearch && matchesKA && matchesQuickFilter;
                   });
-                  
-                  if (filteredTasks.length === 0 && (searchTerm || filterKnowledgeArea !== 'all')) return null;
+
+                  if (filteredTasks.length === 0 && (searchTerm || filterKnowledgeArea !== 'all' || quickFilter !== 'all')) return null;
                   
                   const isExpanded = expandedGroups[group.name] !== false;
                   const groupCompleted = group.tasks.filter(t => tasks[t.id]?.status === 'completed').length;
@@ -1562,13 +1692,12 @@ const ProjectManagementPlatform = () => {
                                     >
                                       <FileText className="h-4 w-4 text-blue-600" />
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        const newDate = prompt('Set due date (YYYY-MM-DD):', taskDueDates[task.id] || '');
-                                        if (newDate) {
-                                          setTaskDueDates(prev => ({...prev, [task.id]: newDate}));
-                                        }
+                                        setDatePickerTask(task);
+                                        setSelectedDate(taskDueDates[task.id] || '');
+                                        setShowDatePicker(true);
                                       }}
                                       className="p-2 hover:bg-green-100 rounded-lg opacity-0 group-hover/task:opacity-100 transition-all"
                                       title="Set due date"
@@ -1846,6 +1975,81 @@ const ProjectManagementPlatform = () => {
           </div>
         </main>
 
+        {/* Date Picker Modal */}
+        {showDatePicker && datePickerTask && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Set Due Date</h3>
+                <button
+                  onClick={() => {
+                    setShowDatePicker(false);
+                    setDatePickerTask(null);
+                    setSelectedDate('');
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                <strong>{datePickerTask.name}</strong>
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Date
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      if (selectedDate) {
+                        setTaskDueDates(prev => ({ ...prev, [datePickerTask.id]: selectedDate }));
+                      }
+                      setShowDatePicker(false);
+                      setDatePickerTask(null);
+                      setSelectedDate('');
+                    }}
+                    disabled={!selectedDate}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Set Date
+                  </button>
+                  {taskDueDates[datePickerTask.id] && (
+                    <button
+                      onClick={() => {
+                        setTaskDueDates(prev => {
+                          const updated = { ...prev };
+                          delete updated[datePickerTask.id];
+                          return updated;
+                        });
+                        setShowDatePicker(false);
+                        setDatePickerTask(null);
+                        setSelectedDate('');
+                      }}
+                      className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Template Modal */}
         {showTemplateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1946,13 +2150,71 @@ const ProjectManagementPlatform = () => {
               {selectedTask && (
                 <p className="text-sm text-gray-600 mb-3"><strong>{selectedTask.name}</strong></p>
               )}
-              
+
+              {!selectedTask && !showAddMember && (
+                <button
+                  onClick={() => setShowAddMember(true)}
+                  className="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Add Team Member
+                </button>
+              )}
+
+              {!selectedTask && showAddMember && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg space-y-3">
+                  <h4 className="font-semibold text-gray-900">New Team Member</h4>
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Role (e.g., Developer, Designer)"
+                    value={newMemberRole}
+                    onChange={(e) => setNewMemberRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={addTeamMember}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Add Member
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddMember(false);
+                        setNewMemberName('');
+                        setNewMemberRole('');
+                        setNewMemberEmail('');
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {teamMembers.map(member => (
-                  <div 
-                    key={member.id} 
-                    className={`p-3 border border-gray-200 rounded-lg cursor-pointer transition-colors ${
-                      selectedTask && taskAssignees[selectedTask.id] === member.id ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
+                  <div
+                    key={member.id}
+                    className={`p-3 border border-gray-200 rounded-lg transition-colors ${
+                      selectedTask ? 'cursor-pointer hover:bg-gray-50' : ''
+                    } ${
+                      selectedTask && taskAssignees[selectedTask.id] === member.id ? 'bg-blue-50 border-blue-300' : ''
                     }`}
                     onClick={() => {
                       if (selectedTask) {
@@ -1963,20 +2225,36 @@ const ProjectManagementPlatform = () => {
                     }}
                   >
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{member.name}</h4>
                         <p className="text-sm text-gray-600">{member.role}</p>
                         <p className="text-xs text-gray-500">{member.email}</p>
+                        {!selectedTask && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            Tasks assigned: {Object.values(taskAssignees).filter(id => id === member.id).length}
+                          </div>
+                        )}
                       </div>
-                      {selectedTask && taskAssignees[selectedTask.id] === member.id && (
-                        <CheckSquare className="h-5 w-5 text-blue-600" />
-                      )}
+                      <div className="flex items-center space-x-2">
+                        {selectedTask && taskAssignees[selectedTask.id] === member.id && (
+                          <CheckSquare className="h-5 w-5 text-blue-600" />
+                        )}
+                        {!selectedTask && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTeamMember(member.id);
+                            }}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Remove team member"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {!selectedTask && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        Tasks assigned: {Object.values(taskAssignees).filter(id => id === member.id).length}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
