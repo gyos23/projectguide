@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2 } from 'lucide-react';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
+  const [projects, setProjects] = useState({});
+  const [currentProjectId, setCurrentProjectId] = useState(null);
   const [selectedMethodology, setSelectedMethodology] = useState(null);
   const [viewMode, setViewMode] = useState('board');
   const [selectedPhase, setSelectedPhase] = useState(null);
@@ -41,6 +43,9 @@ const ProjectManagementPlatform = () => {
   const [navigationHistory, setNavigationHistory] = useState(['landing']);
   const [unnecessaryTasks, setUnnecessaryTasks] = useState({});
   const [showUnnecessary, setShowUnnecessary] = useState(true);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [projectFormData, setProjectFormData] = useState({ name: '', description: '' });
+  const [editingProjectId, setEditingProjectId] = useState(null);
 
   // Methodology configurations
   const methodologies = {
@@ -549,19 +554,47 @@ const ProjectManagementPlatform = () => {
       const savedData = localStorage.getItem('projectGuideData');
       if (savedData) {
         const parsed = JSON.parse(savedData);
-        
-        // Restore all saved state
-        if (parsed.selectedMethodology) setSelectedMethodology(parsed.selectedMethodology);
-        if (parsed.currentStep) setCurrentStep(parsed.currentStep);
-        if (parsed.tasks) setTasks(parsed.tasks);
-        if (parsed.taskNotes) setTaskNotes(parsed.taskNotes);
-        if (parsed.taskDueDates) setTaskDueDates(parsed.taskDueDates);
-        if (parsed.taskAssignees) setTaskAssignees(parsed.taskAssignees);
-        if (parsed.selectedPhase) setSelectedPhase(parsed.selectedPhase);
-        if (parsed.expandedGroups) setExpandedGroups(parsed.expandedGroups);
-        if (parsed.teamMembers) setTeamMembers(parsed.teamMembers);
-        if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
-        if (parsed.unnecessaryTasks) setUnnecessaryTasks(parsed.unnecessaryTasks);
+
+        // Check if this is old single-project format (migrate to multi-project)
+        if (parsed.selectedMethodology && !parsed.projects) {
+          // Migrate old format to new multi-project format
+          const projectId = 'project-' + Date.now();
+          const migratedProject = {
+            id: projectId,
+            name: 'My Project',
+            description: 'Migrated from previous version',
+            methodology: parsed.selectedMethodology,
+            createdAt: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            selectedPhase: parsed.selectedPhase || 0,
+            tasks: parsed.tasks || {},
+            taskNotes: parsed.taskNotes || {},
+            taskDueDates: parsed.taskDueDates || {},
+            taskAssignees: parsed.taskAssignees || {},
+            expandedGroups: parsed.expandedGroups || {},
+            teamMembers: parsed.teamMembers || [],
+            unnecessaryTasks: parsed.unnecessaryTasks || {}
+          };
+
+          setProjects({ [projectId]: migratedProject });
+          setCurrentProjectId(projectId);
+          setSelectedMethodology(migratedProject.methodology);
+          setCurrentStep('dashboard');
+          if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
+        } else if (parsed.projects) {
+          // New multi-project format
+          setProjects(parsed.projects);
+          if (parsed.currentProjectId && parsed.projects[parsed.currentProjectId]) {
+            setCurrentProjectId(parsed.currentProjectId);
+            const currentProject = parsed.projects[parsed.currentProjectId];
+            setSelectedMethodology(currentProject.methodology);
+            setCurrentStep('dashboard');
+          } else {
+            // No current project, show projects list
+            setCurrentStep(Object.keys(parsed.projects).length > 0 ? 'projects' : 'landing');
+          }
+          if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
+        }
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -571,20 +604,36 @@ const ProjectManagementPlatform = () => {
     }
   }, []);
 
-  // Save data to localStorage whenever key state changes
+  // Save current project data when it changes
+  useEffect(() => {
+    if (currentProjectId && projects[currentProjectId]) {
+      const updatedProjects = {
+        ...projects,
+        [currentProjectId]: {
+          ...projects[currentProjectId],
+          methodology: selectedMethodology,
+          selectedPhase,
+          tasks,
+          taskNotes,
+          taskDueDates,
+          taskAssignees,
+          expandedGroups,
+          teamMembers,
+          unnecessaryTasks,
+          lastModified: new Date().toISOString()
+        }
+      };
+      setProjects(updatedProjects);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers, unnecessaryTasks]);
+
+  // Save all data to localStorage whenever projects or settings change
   useEffect(() => {
     const dataToSave = {
-      selectedMethodology,
-      currentStep,
-      tasks,
-      taskNotes,
-      taskDueDates,
-      taskAssignees,
-      selectedPhase,
-      expandedGroups,
-      teamMembers,
+      projects,
+      currentProjectId,
       darkMode,
-      unnecessaryTasks,
       lastSaved: new Date().toISOString()
     };
 
@@ -595,7 +644,23 @@ const ProjectManagementPlatform = () => {
         console.error('Error saving data:', error);
       }
     }
-  }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers, darkMode, unnecessaryTasks]);
+  }, [projects, currentProjectId, darkMode]);
+
+  // Load current project data when switching projects
+  useEffect(() => {
+    if (currentProjectId && projects[currentProjectId]) {
+      const project = projects[currentProjectId];
+      setSelectedMethodology(project.methodology);
+      setSelectedPhase(project.selectedPhase || 0);
+      setTasks(project.tasks || {});
+      setTaskNotes(project.taskNotes || {});
+      setTaskDueDates(project.taskDueDates || {});
+      setTaskAssignees(project.taskAssignees || {});
+      setExpandedGroups(project.expandedGroups || {});
+      setTeamMembers(project.teamMembers || []);
+      setUnnecessaryTasks(project.unnecessaryTasks || {});
+    }
+  }, [currentProjectId]);
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -644,6 +709,77 @@ const ProjectManagementPlatform = () => {
       ...prev,
       [taskId]: !prev[taskId]
     }));
+  };
+
+  // Project management functions
+  const createProject = (name, description, methodology) => {
+    const projectId = 'project-' + Date.now();
+    const newProject = {
+      id: projectId,
+      name,
+      description,
+      methodology,
+      createdAt: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      selectedPhase: 0,
+      tasks: {},
+      taskNotes: {},
+      taskDueDates: {},
+      taskAssignees: {},
+      expandedGroups: {},
+      teamMembers: [
+        { id: 1, name: 'John Smith', role: 'Project Manager', email: 'john.smith@company.com' },
+        { id: 2, name: 'Sarah Johnson', role: 'Business Analyst', email: 'sarah.j@company.com' },
+        { id: 3, name: 'Mike Chen', role: 'Technical Lead', email: 'mike.chen@company.com' },
+        { id: 4, name: 'Lisa Rodriguez', role: 'Quality Assurance', email: 'lisa.r@company.com' },
+        { id: 5, name: 'David Kim', role: 'Stakeholder', email: 'david.kim@company.com' }
+      ],
+      unnecessaryTasks: {}
+    };
+
+    setProjects(prev => ({
+      ...prev,
+      [projectId]: newProject
+    }));
+
+    setCurrentProjectId(projectId);
+    setSelectedMethodology(methodology);
+    navigateTo('dashboard');
+  };
+
+  const selectProject = (projectId) => {
+    if (projects[projectId]) {
+      setCurrentProjectId(projectId);
+      navigateTo('dashboard');
+    }
+  };
+
+  const updateProject = (projectId, updates) => {
+    setProjects(prev => ({
+      ...prev,
+      [projectId]: {
+        ...prev[projectId],
+        ...updates,
+        lastModified: new Date().toISOString()
+      }
+    }));
+  };
+
+  const deleteProject = (projectId) => {
+    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      setProjects(prev => {
+        const updated = { ...prev };
+        delete updated[projectId];
+        return updated;
+      });
+
+      // If deleting current project, clear selection
+      if (currentProjectId === projectId) {
+        setCurrentProjectId(null);
+        setSelectedMethodology(null);
+        navigateTo('projects');
+      }
+    }
   };
 
   const getKnowledgeAreas = () => {
@@ -973,7 +1109,7 @@ const ProjectManagementPlatform = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => setCurrentStep('methodology')}
+                  onClick={() => navigateTo('projects')}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   Start Your Project
@@ -998,8 +1134,8 @@ const ProjectManagementPlatform = () => {
               proven methodologies and best practices.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button 
-                onClick={() => setCurrentStep('methodology')}
+              <button
+                onClick={() => navigateTo('projects')}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 text-lg font-medium shadow-lg"
               >
                 Start Your First Project
@@ -1234,6 +1370,278 @@ const ProjectManagementPlatform = () => {
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Projects List Screen
+  if (currentStep === 'projects') {
+    const projectsList = Object.values(projects);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        {/* Navigation */}
+        <nav className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex items-center">
+                <button
+                  onClick={navigateBack}
+                  className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+                </button>
+                <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ProjectGuide
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? (
+                    <Sun className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-700" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              My Projects
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Select a project to continue or create a new one
+            </p>
+          </div>
+
+          {/* Create New Project Button */}
+          <button
+            onClick={() => {
+              setProjectFormData({ name: '', description: '' });
+              setEditingProjectId(null);
+              setShowProjectModal(true);
+            }}
+            className="w-full md:w-auto mb-8 flex items-center justify-center px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg font-medium"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create New Project
+          </button>
+
+          {/* Projects Grid */}
+          {projectsList.length === 0 ? (
+            <div className="text-center py-16">
+              <FolderOpen className="h-24 w-24 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                No projects yet
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Create your first project to get started
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projectsList.map(project => (
+                <div
+                  key={project.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer border border-gray-200 dark:border-gray-700"
+                >
+                  <div
+                    onClick={() => selectProject(project.id)}
+                    className="p-6"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                          {project.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                          {project.description || 'No description'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <div>
+                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                          {methodologies[project.methodology]?.name || project.methodology}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(project.lastModified).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {project.tasks && Object.keys(project.tasks).length > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          <span>Progress</span>
+                          <span>
+                            {Object.values(project.tasks).filter(t => t.status === 'completed').length}/{Object.keys(project.tasks).length} tasks
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all"
+                            style={{
+                              width: `${(Object.values(project.tasks).filter(t => t.status === 'completed').length / Object.keys(project.tasks).length) * 100}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-3 bg-gray-50 dark:bg-gray-750 flex items-center justify-end space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProjectFormData({ name: project.name, description: project.description });
+                        setEditingProjectId(project.id);
+                        setShowProjectModal(true);
+                      }}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors"
+                      title="Edit project"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id);
+                      }}
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors"
+                      title="Delete project"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Project Creation/Edit Modal */}
+        {showProjectModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl">
+              <div className="border-b border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {editingProjectId ? 'Edit Project' : 'Create New Project'}
+                </h2>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Project Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={projectFormData.name}
+                    onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter project name"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={projectFormData.description}
+                    onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white h-24 resize-none"
+                    placeholder="Enter project description (optional)"
+                  />
+                </div>
+
+                {!editingProjectId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Select Methodology *
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {Object.entries(methodologies).map(([key, methodology]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedMethodology(key)}
+                          className={`p-4 border-2 rounded-lg transition-all ${
+                            selectedMethodology === key
+                              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                          }`}
+                        >
+                          <div className="text-3xl mb-2">{methodology.icon}</div>
+                          <div className="font-semibold text-sm text-gray-900 dark:text-white">
+                            {methodology.name}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 p-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowProjectModal(false);
+                    setProjectFormData({ name: '', description: '' });
+                    setEditingProjectId(null);
+                    setSelectedMethodology(null);
+                  }}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!projectFormData.name.trim()) {
+                      alert('Please enter a project name');
+                      return;
+                    }
+                    if (!editingProjectId && !selectedMethodology) {
+                      alert('Please select a methodology');
+                      return;
+                    }
+
+                    if (editingProjectId) {
+                      updateProject(editingProjectId, {
+                        name: projectFormData.name,
+                        description: projectFormData.description
+                      });
+                      setShowProjectModal(false);
+                      setProjectFormData({ name: '', description: '' });
+                      setEditingProjectId(null);
+                    } else {
+                      createProject(projectFormData.name, projectFormData.description, selectedMethodology);
+                      setShowProjectModal(false);
+                      setProjectFormData({ name: '', description: '' });
+                      setSelectedMethodology(null);
+                    }
+                  }}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  {editingProjectId ? 'Save Changes' : 'Create Project'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1597,6 +2005,29 @@ const ProjectManagementPlatform = () => {
         {/* Sidebar */}
         <aside className="w-72 bg-white border-r border-gray-200 overflow-y-auto">
           <div className="p-4">
+            {/* Current Project Info */}
+            {currentProjectId && projects[currentProjectId] && (
+              <div className="mb-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                      {projects[currentProjectId].name}
+                    </h3>
+                    <p className="text-xs text-gray-600 line-clamp-2">
+                      {projects[currentProjectId].description || 'No description'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigateTo('projects')}
+                  className="w-full flex items-center justify-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Switch Project
+                </button>
+              </div>
+            )}
+
             <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-700">Overall Progress</span>
