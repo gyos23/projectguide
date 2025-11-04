@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle } from 'lucide-react';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -38,6 +38,9 @@ const ProjectManagementPlatform = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTask, setDatePickerTask] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
+  const [navigationHistory, setNavigationHistory] = useState(['landing']);
+  const [unnecessaryTasks, setUnnecessaryTasks] = useState({});
+  const [showUnnecessary, setShowUnnecessary] = useState(true);
 
   // Methodology configurations
   const methodologies = {
@@ -558,6 +561,7 @@ const ProjectManagementPlatform = () => {
         if (parsed.expandedGroups) setExpandedGroups(parsed.expandedGroups);
         if (parsed.teamMembers) setTeamMembers(parsed.teamMembers);
         if (parsed.darkMode !== undefined) setDarkMode(parsed.darkMode);
+        if (parsed.unnecessaryTasks) setUnnecessaryTasks(parsed.unnecessaryTasks);
       }
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -580,6 +584,7 @@ const ProjectManagementPlatform = () => {
       expandedGroups,
       teamMembers,
       darkMode,
+      unnecessaryTasks,
       lastSaved: new Date().toISOString()
     };
 
@@ -590,7 +595,7 @@ const ProjectManagementPlatform = () => {
         console.error('Error saving data:', error);
       }
     }
-  }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers, darkMode]);
+  }, [selectedMethodology, currentStep, tasks, taskNotes, taskDueDates, taskAssignees, selectedPhase, expandedGroups, teamMembers, darkMode, unnecessaryTasks]);
 
   // Apply dark mode class to document
   useEffect(() => {
@@ -600,6 +605,22 @@ const ProjectManagementPlatform = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Navigation functions
+  const navigateTo = (step) => {
+    setNavigationHistory(prev => [...prev, step]);
+    setCurrentStep(step);
+  };
+
+  const navigateBack = () => {
+    if (navigationHistory.length > 1) {
+      const newHistory = [...navigationHistory];
+      newHistory.pop(); // Remove current step
+      const previousStep = newHistory[newHistory.length - 1];
+      setNavigationHistory(newHistory);
+      setCurrentStep(previousStep);
+    }
+  };
 
   const toggleTask = (taskId) => {
     setTasks(prev => ({
@@ -615,6 +636,13 @@ const ProjectManagementPlatform = () => {
     setExpandedGroups(prev => ({
       ...prev,
       [groupName]: !prev[groupName]
+    }));
+  };
+
+  const toggleUnnecessaryTask = (taskId) => {
+    setUnnecessaryTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
     }));
   };
 
@@ -1217,13 +1245,21 @@ const ProjectManagementPlatform = () => {
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-8">
           <div className="max-w-6xl mx-auto">
-            <button
-              onClick={() => setCurrentStep('landing')}
-              className="mb-6 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back to Home
-            </button>
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={navigateBack}
+                className="text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </button>
+              <button
+                onClick={() => navigateTo('landing')}
+                className="text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center"
+              >
+                Home
+              </button>
+            </div>
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Choose Your Delivery Approach
@@ -1287,7 +1323,7 @@ const ProjectManagementPlatform = () => {
                   key={key}
                   onClick={() => {
                     setSelectedMethodology(key);
-                    setCurrentStep('dashboard');
+                    navigateTo('dashboard');
                   }}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 group overflow-hidden"
                 >
@@ -1644,6 +1680,23 @@ const ProjectManagementPlatform = () => {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="p-6">
+            {/* Navigation Bar */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={navigateBack}
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </button>
+              <button
+                onClick={() => navigateTo('landing')}
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Home
+              </button>
+            </div>
+
             {/* Phase Header */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -1735,6 +1788,18 @@ const ProjectManagementPlatform = () => {
                 >
                   No Due Date
                 </button>
+                <div className="flex items-center ml-4 px-4 py-2 bg-white border border-gray-300 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="show-unnecessary"
+                    checked={showUnnecessary}
+                    onChange={(e) => setShowUnnecessary(e.target.checked)}
+                    className="mr-2 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="show-unnecessary" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Show "Not Needed" Tasks
+                  </label>
+                </div>
               </div>
 
               {/* Search and Filters */}
@@ -1790,7 +1855,10 @@ const ProjectManagementPlatform = () => {
                       matchesQuickFilter = !taskDueDates[task.id];
                     }
 
-                    return matchesSearch && matchesKA && matchesQuickFilter;
+                    // Filter out unnecessary tasks if showUnnecessary is false
+                    const matchesUnnecessary = showUnnecessary || !unnecessaryTasks[task.id];
+
+                    return matchesSearch && matchesKA && matchesQuickFilter && matchesUnnecessary;
                   });
 
                   if (filteredTasks.length === 0 && (searchTerm || filterKnowledgeArea !== 'all' || quickFilter !== 'all')) return null;
@@ -1831,11 +1899,15 @@ const ProjectManagementPlatform = () => {
                             return (
                               <div
                                 key={task.id}
-                                className="group/task"
+                                className={`group/task ${unnecessaryTasks[task.id] ? 'opacity-60' : ''}`}
                               >
                                 <div
                                   onClick={() => toggleTask(task.id)}
-                                  className="flex items-center p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all"
+                                  className={`flex items-center p-4 rounded-lg border transition-all cursor-pointer ${
+                                    unnecessaryTasks[task.id]
+                                      ? 'border-gray-300 bg-gray-50'
+                                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                  }`}
                                 >
                                   <div className={`w-6 h-6 rounded-md border-2 mr-4 flex items-center justify-center flex-shrink-0 transition-colors ${
                                     taskData.status === 'completed' 
@@ -1869,6 +1941,11 @@ const ProjectManagementPlatform = () => {
                                       {taskNotes[task.id] && (
                                         <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full">
                                           Has notes
+                                        </span>
+                                      )}
+                                      {unnecessaryTasks[task.id] && (
+                                        <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded-full">
+                                          Not Needed
                                         </span>
                                       )}
                                       {showGuidance && task.guidance && (
@@ -1909,7 +1986,7 @@ const ProjectManagementPlatform = () => {
                                     >
                                       <Clock className="h-4 w-4 text-green-600" />
                                     </button>
-                                    <button 
+                                    <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setSelectedTask(task);
@@ -1919,6 +1996,20 @@ const ProjectManagementPlatform = () => {
                                       title="Assign resource"
                                     >
                                       <Users className="h-4 w-4 text-purple-600" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleUnnecessaryTask(task.id);
+                                      }}
+                                      className={`p-2 rounded-lg transition-all ${
+                                        unnecessaryTasks[task.id]
+                                          ? 'bg-gray-200 hover:bg-gray-300'
+                                          : 'hover:bg-gray-100 opacity-0 group-hover/task:opacity-100'
+                                      }`}
+                                      title={unnecessaryTasks[task.id] ? "Mark as needed" : "Mark as not needed"}
+                                    >
+                                      <XCircle className={`h-4 w-4 ${unnecessaryTasks[task.id] ? 'text-gray-600' : 'text-gray-400'}`} />
                                     </button>
                                   </div>
                                 </div>
@@ -2016,7 +2107,9 @@ const ProjectManagementPlatform = () => {
                       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                       const tasksForDay = Object.entries(tasks).filter(([id, task]) => {
                         const dueDate = taskDueDates[id];
-                        return dueDate && dueDate.startsWith(dateStr);
+                        const matchesDate = dueDate && dueDate.startsWith(dateStr);
+                        const matchesUnnecessary = showUnnecessary || !unnecessaryTasks[id];
+                        return matchesDate && matchesUnnecessary;
                       });
 
                       days.push(
@@ -2115,7 +2208,9 @@ const ProjectManagementPlatform = () => {
                       {Object.entries(tasks)
                         .filter(([id, task]) => {
                           const dueDate = taskDueDates[id];
-                          return dueDate && dueDate.startsWith(selectedCalendarDate);
+                          const matchesDate = dueDate && dueDate.startsWith(selectedCalendarDate);
+                          const matchesUnnecessary = showUnnecessary || !unnecessaryTasks[id];
+                          return matchesDate && matchesUnnecessary;
                         })
                         .map(([id, task]) => {
                           const assignee = taskAssignees[id] ? teamMembers.find(m => m.id === taskAssignees[id]) : null;
