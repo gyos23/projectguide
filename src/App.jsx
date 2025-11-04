@@ -1213,65 +1213,270 @@ const ProjectManagementPlatform = () => {
   // Methodology Selection Screen
   if (currentStep === 'methodology') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Delivery Approach</h1>
-            <p className="text-lg text-gray-600 mb-6">Select the methodology that best fits your project needs</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 px-8">
+          <div className="max-w-6xl mx-auto">
             <button
               onClick={() => setCurrentStep('landing')}
-              className="text-sm text-gray-600 hover:text-blue-600 mb-8 px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mb-6 text-white/80 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center"
             >
-              ← Back to Home
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Home
             </button>
-          </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {Object.entries(methodologies).map(([key, method]) => (
-              <div
-                key={key}
-                onClick={() => {
-                  setSelectedMethodology(key);
-                  setCurrentStep('dashboard');
-                }}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1 group"
-              >
-                <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform">{method.icon}</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{method.name}</h3>
-                <p className="text-gray-600 mb-6">{method.description}</p>
-                <div className={`inline-flex items-center text-${method.color}-600 font-semibold group-hover:text-${method.color}-700`}>
-                  Select <ChevronRight className="ml-2 h-5 w-5" />
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Choose Your Delivery Approach
+              </h1>
+              <p className="text-xl text-blue-100 mb-6 max-w-3xl mx-auto">
+                Select the methodology that aligns with your project requirements, team structure, and organizational needs
+              </p>
+              <div className="flex items-center justify-center space-x-8 text-sm">
+                <div className="flex items-center">
+                  <CheckSquare className="h-5 w-5 mr-2" />
+                  <span>Comprehensive Task Lists</span>
+                </div>
+                <div className="flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  <span>Built-in Guidance</span>
+                </div>
+                <div className="flex items-center">
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  <span>Progress Tracking</span>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-8 py-12">
+          {/* Methodology Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {Object.entries(methodologies).map(([key, method]) => {
+              const methodologyDetails = {
+                traditional: {
+                  subtitle: "Predictive & Sequential",
+                  bestFor: "Well-defined requirements",
+                  phases: "5 Process Groups",
+                  tasks: "120+ Structured Tasks",
+                  features: ["Sequential phases", "Detailed documentation", "Comprehensive planning", "Change control"],
+                  ideal: ["Construction", "Manufacturing", "Government", "Regulated industries"]
+                },
+                hybrid: {
+                  subtitle: "Flexible & Adaptive",
+                  bestFor: "Mixed requirements",
+                  phases: "Iterative Approach",
+                  tasks: "100+ Balanced Tasks",
+                  features: ["Combines best of both", "Incremental delivery", "Adaptive planning", "Risk management"],
+                  ideal: ["Product development", "Digital transformation", "Complex projects", "Evolving requirements"]
+                },
+                agile: {
+                  subtitle: "Iterative & Collaborative",
+                  bestFor: "Evolving requirements",
+                  phases: "Sprint-based",
+                  tasks: "80+ Flexible Tasks",
+                  features: ["Rapid iterations", "Customer collaboration", "Continuous delivery", "Self-organizing teams"],
+                  ideal: ["Software development", "Startups", "Innovation projects", "Fast-paced markets"]
+                }
+              };
+
+              const details = methodologyDetails[key];
+
+              return (
+                <div
+                  key={key}
+                  onClick={() => {
+                    setSelectedMethodology(key);
+                    setCurrentStep('dashboard');
+                  }}
+                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 group overflow-hidden"
+                >
+                  {/* Card Header */}
+                  <div className={`bg-gradient-to-r ${
+                    key === 'traditional' ? 'from-blue-500 to-blue-600' :
+                    key === 'hybrid' ? 'from-purple-500 to-purple-600' :
+                    'from-green-500 to-green-600'
+                  } p-6 text-white`}>
+                    <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">
+                      {method.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-1">{method.name}</h3>
+                    <p className="text-sm opacity-90">{details.subtitle}</p>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-6">
+                    <div className="mb-4">
+                      <p className="text-gray-700 leading-relaxed">{method.description}</p>
+                    </div>
+
+                    {/* Key Stats */}
+                    <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="font-semibold text-gray-900">{details.phases}</div>
+                        <div className="text-gray-600 text-xs">Structure</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="font-semibold text-gray-900">{details.tasks}</div>
+                        <div className="text-gray-600 text-xs">Included</div>
+                      </div>
+                    </div>
+
+                    {/* Best For */}
+                    <div className="mb-4">
+                      <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Best For</div>
+                      <div className="text-sm text-gray-700">{details.bestFor}</div>
+                    </div>
+
+                    {/* Key Features */}
+                    <div className="mb-4">
+                      <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Key Features</div>
+                      <ul className="space-y-1">
+                        {details.features.map((feature, idx) => (
+                          <li key={idx} className="text-sm text-gray-700 flex items-start">
+                            <span className="text-green-500 mr-2">✓</span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Ideal For */}
+                    <div className="mb-4">
+                      <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Ideal For</div>
+                      <div className="flex flex-wrap gap-2">
+                        {details.ideal.map((industry, idx) => (
+                          <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                            {industry}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <button className={`w-full mt-4 py-3 rounded-lg font-semibold transition-all ${
+                      key === 'traditional' ? 'bg-blue-600 hover:bg-blue-700 text-white' :
+                      key === 'hybrid' ? 'bg-purple-600 hover:bg-purple-700 text-white' :
+                      'bg-green-600 hover:bg-green-700 text-white'
+                    } flex items-center justify-center group-hover:shadow-lg`}>
+                      Start with {method.name.split(' ')[0]}
+                      <ChevronRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="mt-12 text-center">
-            <p className="text-gray-600 mb-4">Need help choosing?</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <span className="font-semibold">Choose Traditional if:</span>
-                <ul className="mt-2 text-left space-y-1">
-                  <li>• Requirements are well-defined</li>
-                  <li>• Changes are minimal</li>
-                  <li>• Regulatory compliance needed</li>
-                </ul>
+          {/* Comparison Table */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Quick Comparison</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Aspect</th>
+                    <th className="text-center py-3 px-4 font-semibold text-blue-700">Traditional</th>
+                    <th className="text-center py-3 px-4 font-semibold text-purple-700">Hybrid</th>
+                    <th className="text-center py-3 px-4 font-semibold text-green-700">Agile</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr>
+                    <td className="py-3 px-4 font-medium text-gray-700">Planning Approach</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Upfront & Detailed</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Progressive</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Iterative</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-700">Change Tolerance</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Low</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Medium</td>
+                    <td className="py-3 px-4 text-center text-gray-600">High</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4 font-medium text-gray-700">Delivery Frequency</td>
+                    <td className="py-3 px-4 text-center text-gray-600">End of Project</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Milestones</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Every Sprint</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-700">Documentation</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Comprehensive</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Balanced</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Lightweight</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4 font-medium text-gray-700">Team Structure</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Hierarchical</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Matrix</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Self-Organizing</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-700">Best Project Size</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Large</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Medium-Large</td>
+                    <td className="py-3 px-4 text-center text-gray-600">Small-Medium</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Help Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+              <div className="flex items-start mb-4">
+                <div className="bg-blue-600 rounded-lg p-2 mr-3">
+                  <AlertCircle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Not Sure?</h3>
+                  <p className="text-sm text-gray-700">Start with Hybrid - it combines the best of both worlds and can adapt to your needs.</p>
+                </div>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4">
-                <span className="font-semibold">Choose Hybrid if:</span>
-                <ul className="mt-2 text-left space-y-1">
-                  <li>• Mix of stable & changing elements</li>
-                  <li>• Multiple delivery approaches</li>
-                  <li>• Transitioning to Agile</li>
-                </ul>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+              <div className="flex items-start mb-4">
+                <div className="bg-purple-600 rounded-lg p-2 mr-3">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Learning Mode</h3>
+                  <p className="text-sm text-gray-700">Each methodology includes detailed guidance to help you understand PM best practices.</p>
+                </div>
               </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <span className="font-semibold">Choose Agile if:</span>
-                <ul className="mt-2 text-left space-y-1">
-                  <li>• Requirements evolve frequently</li>
-                  <li>• Need rapid iterations</li>
-                  <li>• Customer collaboration focus</li>
-                </ul>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+              <div className="flex items-start mb-4">
+                <div className="bg-green-600 rounded-lg p-2 mr-3">
+                  <Settings className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">Fully Customizable</h3>
+                  <p className="text-sm text-gray-700">Adapt any methodology to your needs - add tasks, customize workflows, and track progress your way.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 text-white text-center">
+            <h2 className="text-2xl font-bold mb-6">Trusted by Project Managers Worldwide</h2>
+            <div className="grid grid-cols-3 gap-8">
+              <div>
+                <div className="text-4xl font-bold text-blue-400 mb-2">300+</div>
+                <div className="text-gray-300">Tasks & Templates</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-purple-400 mb-2">10</div>
+                <div className="text-gray-300">Knowledge Areas</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-green-400 mb-2">100%</div>
+                <div className="text-gray-300">Free to Use</div>
               </div>
             </div>
           </div>
