@@ -1287,8 +1287,9 @@ const ProjectManagementPlatform = () => {
   const getProgressStats = () => {
     const allTasks = Object.values(tasks);
     const completed = allTasks.filter(t => t.status === 'completed').length;
+    const inProgress = allTasks.filter(t => t.status === 'in-progress').length;
     const total = allTasks.length;
-    return { completed, total, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
+    return { completed, inProgress, total, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
   const stats = getProgressStats();
