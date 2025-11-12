@@ -1592,6 +1592,20 @@ const ProjectManagementPlatform = () => {
                         </button>
                       ))}
                     </div>
+                    <div className="mt-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProjectModal(false);
+                          setProjectFormData({ name: '', description: '' });
+                          navigateTo('methodology');
+                        }}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
+                      >
+                        <BookOpen className="h-4 w-4 mr-1" />
+                        Don't know which you need? Compare methodologies
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1731,7 +1745,9 @@ const ProjectManagementPlatform = () => {
                   key={key}
                   onClick={() => {
                     setSelectedMethodology(key);
-                    navigateTo('dashboard');
+                    setShowProjectModal(true);
+                    setProjectFormData({ name: '', description: '' });
+                    navigateTo('projects');
                   }}
                   className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2 group overflow-hidden"
                 >
@@ -1931,6 +1947,19 @@ const ProjectManagementPlatform = () => {
 
   // Main Dashboard
   const methodology = methodologies[selectedMethodology];
+
+  // If methodology is not loaded yet, show loading state
+  if (!methodology) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your project...</p>
+        </div>
+      </div>
+    );
+  }
+
   const currentPhaseData = selectedPhase ? methodology.phases.find(p => p.id === selectedPhase) : methodology.phases[0];
 
   const getProgressStats = () => {
