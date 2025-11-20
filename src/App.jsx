@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2, HelpCircle } from 'lucide-react';
+import introJs from 'intro.js';
+import 'intro.js/introjs.css';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -46,6 +48,10 @@ const ProjectManagementPlatform = () => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [projectFormData, setProjectFormData] = useState({ name: '', description: '' });
   const [editingProjectId, setEditingProjectId] = useState(null);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(() => {
+    const seen = localStorage.getItem('projectguide_tutorial_seen');
+    return seen === 'true';
+  });
 
   // Methodology configurations
   const methodologies = {
@@ -611,7 +617,7 @@ const ProjectManagementPlatform = () => {
         ...projects,
         [currentProjectId]: {
           ...projects[currentProjectId],
-          methodology: selectedMethodology,
+          // Don't update methodology - it's set at project creation
           selectedPhase,
           tasks,
           taskNotes,
@@ -685,6 +691,101 @@ const ProjectManagementPlatform = () => {
       setNavigationHistory(newHistory);
       setCurrentStep(previousStep);
     }
+  };
+
+  // Tutorial function
+  const startTutorial = () => {
+    const intro = introJs();
+
+    // Define tutorial steps based on current view
+    const steps = [];
+
+    if (currentStep === 'projects') {
+      // Projects page tutorial
+      steps.push(
+        {
+          title: 'Welcome to ProjectGuide! 🎓',
+          intro: 'The only PM tool that teaches you best practices while you work. Let\'s take a quick tour to get you started.'
+        },
+        {
+          element: document.querySelector('[data-tutorial="create-project"]'),
+          title: 'Create Your First Project',
+          intro: 'Start by creating a new project. You\'ll choose a methodology that fits your project needs.',
+          position: 'bottom'
+        }
+      );
+    } else if (currentStep === 'dashboard') {
+      // Dashboard tutorial
+      steps.push(
+        {
+          title: 'Your Project Dashboard 📊',
+          intro: 'This is your command center for managing your project using proven methodologies.'
+        },
+        {
+          element: document.querySelector('[data-tutorial="phases"]'),
+          title: 'Navigate Phases',
+          intro: 'Your project is organized into phases. Each phase represents a key stage in your project lifecycle.',
+          position: 'right'
+        },
+        {
+          element: document.querySelector('[data-tutorial="tasks"]'),
+          title: 'Complete Tasks',
+          intro: 'Each phase contains specific tasks based on PMI standards. Click tasks to mark them complete and track your progress.',
+          position: 'top'
+        },
+        {
+          element: document.querySelector('[data-tutorial="view-modes"]'),
+          title: 'Switch Views',
+          intro: 'Toggle between Board, Timeline, Team, and Analytics views to see your project from different perspectives.',
+          position: 'bottom'
+        },
+        {
+          element: document.querySelector('[data-tutorial="templates"]'),
+          title: 'Use Templates',
+          intro: 'Access methodology-specific document templates to create professional project artifacts.',
+          position: 'bottom'
+        },
+        {
+          element: document.querySelector('[data-tutorial="progress"]'),
+          title: 'Track Progress',
+          intro: 'Monitor your completion percentage and see real-time analytics of your project health.',
+          position: 'left'
+        },
+        {
+          element: document.querySelector('[data-tutorial="guidance"]'),
+          title: 'Get Guidance',
+          intro: 'Click on any task to see detailed guidance on how to complete it according to best practices.',
+          position: 'top'
+        }
+      );
+    }
+
+    // Configure intro.js
+    intro.setOptions({
+      steps: steps.filter(step => !step.element || step.element), // Filter out steps where element doesn't exist
+      showProgress: true,
+      showBullets: true,
+      exitOnOverlayClick: false,
+      dontShowAgain: true,
+      dontShowAgainLabel: 'Don\'t show this again',
+      nextLabel: 'Next →',
+      prevLabel: '← Back',
+      doneLabel: 'Got it! ✓',
+      tooltipClass: 'customTooltip',
+      highlightClass: 'customHighlight'
+    });
+
+    intro.oncomplete(() => {
+      localStorage.setItem('projectguide_tutorial_seen', 'true');
+      setHasSeenTutorial(true);
+    });
+
+    intro.onexit(() => {
+      localStorage.setItem('projectguide_tutorial_seen', 'true');
+      setHasSeenTutorial(true);
+    });
+
+    intro.start();
   };
 
   const toggleTask = (taskId) => {
@@ -797,53 +898,119 @@ const ProjectManagementPlatform = () => {
   };
 
   // Document Templates
-  const documentTemplates = {
-    'Project Charter': {
-      description: 'Formal document that authorizes the project',
-      sections: ['Project Purpose', 'Objectives', 'Success Criteria', 'High-Level Requirements', 'Assumptions & Constraints', 'Budget & Timeline']
-    },
-    'Business Case': {
-      description: 'Justification for initiating the project',
-      sections: ['Executive Summary', 'Problem Statement', 'Proposed Solution', 'Cost-Benefit Analysis', 'Risk Assessment', 'Recommendation']
-    },
-    'WBS': {
-      description: 'Work Breakdown Structure template',
-      sections: ['Level 1 - Project', 'Level 2 - Major Deliverables', 'Level 3 - Work Packages', 'Level 4 - Activities', 'WBS Dictionary']
-    },
-    'Risk Register': {
-      description: 'Document to track and manage project risks',
-      sections: ['Risk ID', 'Risk Description', 'Probability', 'Impact', 'Risk Score', 'Mitigation Strategy', 'Owner', 'Status']
-    },
-    'Stakeholder Register': {
-      description: 'List of all project stakeholders',
-      sections: ['Name', 'Role', 'Contact Information', 'Requirements', 'Expectations', 'Influence Level', 'Engagement Strategy']
-    },
-    'Communications Plan': {
-      description: 'How project information will be communicated',
-      sections: ['Stakeholder', 'Information Needs', 'Frequency', 'Method', 'Owner', 'Distribution List']
-    }
+  // Methodology-specific document templates
+  const getDocumentTemplates = () => {
+    const templates = {
+      traditional: {
+        'Project Charter': {
+          description: 'Formal document that authorizes the project and gives the PM authority',
+          sections: ['Project Purpose & Justification', 'Measurable Project Objectives', 'Success Criteria', 'High-Level Requirements', 'High-Level Risks', 'Summary Budget', 'Summary Milestone Schedule', 'Project Approval Requirements', 'Assigned Project Manager & Authority Level', 'Sponsor Authorization']
+        },
+        'Project Management Plan': {
+          description: 'Comprehensive document integrating all subsidiary plans',
+          sections: ['Project Scope Management', 'Schedule Management', 'Cost Management', 'Quality Management', 'Resource Management', 'Communications Management', 'Risk Management', 'Procurement Management', 'Stakeholder Engagement', 'Change Management Process', 'Configuration Management', 'Baseline Information']
+        },
+        'Requirements Traceability Matrix': {
+          description: 'Links requirements to deliverables and test cases',
+          sections: ['Requirement ID', 'Requirement Description', 'Business Need', 'Project Objective', 'WBS Deliverable', 'Product Design', 'Development', 'Test Case', 'Status']
+        },
+        'Change Request Log': {
+          description: 'Tracks all project change requests and their status',
+          sections: ['CR Number', 'Date Submitted', 'Requestor', 'Description of Change', 'Reason for Change', 'Impact on Scope', 'Impact on Schedule', 'Impact on Budget', 'Priority', 'Status', 'Approval Date', 'Approved By']
+        },
+        'Lessons Learned Register': {
+          description: 'Captures knowledge gained throughout the project',
+          sections: ['Date', 'Phase', 'Category (Process/People/Technology)', 'What Went Well', 'What Could Be Improved', 'Root Cause', 'Recommendation', 'Impact', 'Action Items', 'Responsible Party']
+        },
+        'Project Closure Report': {
+          description: 'Formal document signaling project completion',
+          sections: ['Project Summary', 'Final Deliverables', 'Objectives Achievement', 'Budget Performance', 'Schedule Performance', 'Quality Metrics', 'Key Accomplishments', 'Outstanding Issues', 'Lessons Learned', 'Final Sign-off']
+        }
+      },
+      hybrid: {
+        'Product Roadmap': {
+          description: 'Strategic view of product evolution over time',
+          sections: ['Vision & Strategy', 'Timeline (Quarters/Releases)', 'Themes & Epics', 'Release 1 Goals', 'Release 2 Goals', 'Release 3 Goals', 'Dependencies', 'Success Metrics', 'Key Stakeholders', 'Risk & Assumptions']
+        },
+        'Release Plan': {
+          description: 'Detailed plan for specific product release',
+          sections: ['Release Number & Name', 'Release Goals', 'Scope (Features/Stories)', 'Sprint Schedule', 'Team Capacity', 'Release Criteria', 'Dependencies', 'Risks', 'Stakeholder Communication', 'Go-Live Strategy']
+        },
+        'Sprint Planning Template': {
+          description: 'Planning document for each sprint iteration',
+          sections: ['Sprint Number', 'Sprint Duration', 'Sprint Goal', 'Team Capacity', 'Stories Selected', 'Story Points', 'Acceptance Criteria', 'Dependencies', 'Definition of Done', 'Team Commitments']
+        },
+        'Iteration Report': {
+          description: 'Summary of iteration results and metrics',
+          sections: ['Iteration Number', 'Duration', 'Planned vs Actual', 'Velocity', 'Stories Completed', 'Stories Incomplete', 'Burndown Chart Summary', 'Quality Metrics', 'Blockers Encountered', 'Key Decisions', 'Next Iteration Focus']
+        },
+        'Governance Board Report': {
+          description: 'Status report for steering committee meetings',
+          sections: ['Executive Summary', 'Progress Overview', 'Release Status', 'Budget Status', 'Key Risks & Issues', 'Change Requests', 'Resource Needs', 'Decisions Required', 'Upcoming Milestones', 'Recommendations']
+        },
+        'Retrospective Summary': {
+          description: 'Team reflection on process improvements',
+          sections: ['Iteration Period', 'What Went Well', 'What Didn\'t Go Well', 'Puzzles/Questions', 'Action Items', 'Owner', 'Due Date', 'Previous Action Status', 'Metrics Reviewed', 'Team Commitments']
+        }
+      },
+      agile: {
+        'Product Backlog': {
+          description: 'Prioritized list of features and requirements',
+          sections: ['Backlog Item ID', 'User Story', 'As a [role], I want [feature] so that [benefit]', 'Acceptance Criteria', 'Story Points', 'Priority (MoSCoW)', 'Business Value', 'Sprint Assignment', 'Status', 'Notes']
+        },
+        'Sprint Backlog': {
+          description: 'Work items committed for the current sprint',
+          sections: ['Sprint Number & Goal', 'User Story', 'Tasks', 'Story Points', 'Task Owner', 'Estimated Hours', 'Actual Hours', 'Status', 'Blockers', 'Daily Progress']
+        },
+        'User Story Template': {
+          description: 'Standard format for writing user stories',
+          sections: ['Story Title', 'As a [user type]', 'I want to [action]', 'So that [benefit/value]', 'Acceptance Criteria (Given/When/Then)', 'Story Points', 'Priority', 'Dependencies', 'Technical Notes', 'Definition of Done Checklist']
+        },
+        'Sprint Retrospective': {
+          description: 'Team reflection and continuous improvement session',
+          sections: ['Sprint Number', 'Date', 'Attendees', 'What Went Well (Keep Doing)', 'What Didn\'t Go Well (Stop Doing)', 'What Should We Try (Start Doing)', 'Action Items', 'Owner', 'Due Date', 'Previous Actions Review', 'Team Mood Check']
+        },
+        'Sprint Review Notes': {
+          description: 'Demo meeting outcomes and stakeholder feedback',
+          sections: ['Sprint Number', 'Date', 'Demo Attendees', 'Stories Demoed', 'Acceptance Status', 'Stakeholder Feedback', 'Change Requests', 'Questions Raised', 'Next Sprint Preview', 'Action Items']
+        },
+        'Definition of Done': {
+          description: 'Shared understanding of what "complete" means',
+          sections: ['Code Complete Checklist', 'Code reviewed by peer', 'Unit tests written and passing', 'Integration tests passing', 'Documentation updated', 'Acceptance criteria met', 'Deployed to test environment', 'Product Owner acceptance', 'No known defects', 'Sprint-Specific Additions']
+        }
+      }
+    };
+
+    return templates[selectedMethodology] || templates.traditional;
   };
 
   const generateTemplate = (templateName) => {
-    const template = documentTemplates[templateName];
+    const templates = getDocumentTemplates();
+    const template = templates[templateName];
     if (!template) return '';
 
+    const methodologyName = methodologies[selectedMethodology]?.name || 'Project Management';
+
     let content = `# ${templateName}\n\n`;
+    content += `**Methodology:** ${methodologyName}\n`;
     content += `**Description:** ${template.description}\n\n`;
-    content += `**Project:** [Your Project Name]\n`;
+    content += `**Project:** ${currentProjectId && projects[currentProjectId] ? projects[currentProjectId].name : '[Your Project Name]'}\n`;
     content += `**Date:** ${new Date().toLocaleDateString()}\n`;
     content += `**Prepared by:** [Your Name]\n\n`;
+    content += `---\n\n`;
 
     template.sections.forEach((section, index) => {
-      content += `## ${index + 1}. ${section}\n\n`;
-      content += `[Add content for ${section}]\n\n`;
+      content += `## ${section}\n\n`;
+      content += `[Add your content here]\n\n`;
     });
 
-    content += `---\n`;
+    content += `---\n\n`;
     content += `**Document Control**\n`;
     content += `- Version: 1.0\n`;
     content += `- Last Updated: ${new Date().toLocaleDateString()}\n`;
     content += `- Next Review: [Date]\n`;
+    content += `- Status: Draft\n\n`;
+    content += `**Tip:** This template is optimized for ${methodologyName} projects. Customize sections as needed for your specific context.\n`;
 
     return content;
   };
@@ -1397,6 +1564,13 @@ const ProjectManagementPlatform = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <button
+                  onClick={startTutorial}
+                  className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                  title="Take a Tour"
+                >
+                  <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </button>
+                <button
                   onClick={() => setDarkMode(!darkMode)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   aria-label="Toggle dark mode"
@@ -1431,6 +1605,7 @@ const ProjectManagementPlatform = () => {
               setShowProjectModal(true);
             }}
             className="w-full md:w-auto mb-8 flex items-center justify-center px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg font-medium"
+            data-tutorial="create-project"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create New Project
@@ -1578,6 +1753,20 @@ const ProjectManagementPlatform = () => {
                       Choose the methodology that best fits your project's needs. Each approach has specific strengths.
                     </p>
 
+                    <div className="mb-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProjectModal(false);
+                          navigateTo('methodology');
+                        }}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        View Full Methodology Comparison with Examples
+                      </button>
+                    </div>
+
                     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                       {Object.entries(methodologies).map(([key, methodology]) => {
                         const methodologyDetails = {
@@ -1586,21 +1775,21 @@ const ProjectManagementPlatform = () => {
                             bestFor: "Well-defined requirements and regulatory projects",
                             guidance: "Best when you know exactly what needs to be built and have stable requirements. Common in construction, manufacturing, and government projects.",
                             whenToUse: ["Requirements are clear and unlikely to change", "Regulatory compliance is required", "Sequential phases make sense", "Detailed upfront planning is necessary"],
-                            tasks: "120+ comprehensive tasks"
+                            tasks: "110+ comprehensive tasks"
                           },
                           hybrid: {
                             subtitle: "Flexible & Adaptive",
                             bestFor: "Projects with mixed predictability",
                             guidance: "Combines the structure of traditional PM with the flexibility of agile. Perfect when you need planning rigor but also adaptability.",
                             whenToUse: ["Some requirements are known, others will evolve", "Need structure but also flexibility", "Team is familiar with both approaches", "Want iterative delivery within phases"],
-                            tasks: "100+ balanced tasks"
+                            tasks: "Core framework + customize"
                           },
                           agile: {
                             subtitle: "Iterative & Collaborative",
                             bestFor: "Evolving requirements and innovation",
                             guidance: "Embrace change and deliver in short sprints. Ideal for software development and projects where customer feedback drives the product.",
                             whenToUse: ["Requirements will change frequently", "Fast delivery is critical", "Customer collaboration is key", "Team can self-organize"],
-                            tasks: "80+ sprint-focused tasks"
+                            tasks: "Sprint essentials + adapt"
                           }
                         };
 
@@ -2054,7 +2243,7 @@ const ProjectManagementPlatform = () => {
               </button>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-2">
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-2" data-tutorial="view-modes">
                 <button
                   onClick={() => setViewMode('board')}
                   className={`px-3 py-1 rounded ${viewMode === 'board' ? 'bg-white shadow-sm' : ''}`}
@@ -2074,6 +2263,21 @@ const ProjectManagementPlatform = () => {
                 title="View Dashboard"
               >
                 <BarChart3 className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setShowTemplateModal(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Document Templates"
+                data-tutorial="templates"
+              >
+                <FileText className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={startTutorial}
+                className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Take a Tour"
+              >
+                <HelpCircle className="h-5 w-5 text-blue-600" />
               </button>
               <button
                 onClick={() => setShowExportModal(true)}
@@ -2114,13 +2318,13 @@ const ProjectManagementPlatform = () => {
               </div>
             )}
 
-            <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4" data-tutorial="progress">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-700">Overall Progress</span>
                 <span className="text-lg font-bold text-blue-700">{stats.percentage}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
+                <div
                   className="bg-blue-600 h-3 rounded-full transition-all"
                   style={{ width: `${stats.percentage}%` }}
                 />
@@ -2141,7 +2345,7 @@ const ProjectManagementPlatform = () => {
             </div>
 
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Project Phases</h3>
-            <nav className="space-y-1">
+            <nav className="space-y-1" data-tutorial="phases">
               {methodology.phases.map((phase) => {
                 const phaseTasks = phase.processGroups.flatMap(g => g.tasks);
                 const phaseCompleted = phaseTasks.filter(t => tasks[t.id]?.status === 'completed').length;
@@ -2222,9 +2426,10 @@ const ProjectManagementPlatform = () => {
                   <p className="text-gray-600">Complete the following tasks and deliverables</p>
                 </div>
                 <div className="flex space-x-2">
-                  <button 
+                  <button
                     onClick={() => setShowGuidance(!showGuidance)}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    data-tutorial="guidance"
                   >
                     <BookOpen className="h-4 w-4 mr-2" />
                     {showGuidance ? 'Hide' : 'Show'} Guidance
@@ -2346,7 +2551,7 @@ const ProjectManagementPlatform = () => {
 
             {/* Board View */}
             {viewMode === 'board' && (
-              <div className="space-y-6">
+              <div className="space-y-6" data-tutorial="tasks">
                 {currentPhaseData.processGroups.map((group, idx) => {
                   const filteredTasks = group.tasks.filter(task => {
                     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase());
