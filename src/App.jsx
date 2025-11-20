@@ -611,7 +611,7 @@ const ProjectManagementPlatform = () => {
         ...projects,
         [currentProjectId]: {
           ...projects[currentProjectId],
-          methodology: selectedMethodology,
+          // Don't update methodology - it's set at project creation
           selectedPhase,
           tasks,
           taskNotes,
@@ -1578,6 +1578,20 @@ const ProjectManagementPlatform = () => {
                       Choose the methodology that best fits your project's needs. Each approach has specific strengths.
                     </p>
 
+                    <div className="mb-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProjectModal(false);
+                          navigateTo('methodology');
+                        }}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        View Full Methodology Comparison with Examples
+                      </button>
+                    </div>
+
                     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                       {Object.entries(methodologies).map(([key, methodology]) => {
                         const methodologyDetails = {
@@ -1586,21 +1600,21 @@ const ProjectManagementPlatform = () => {
                             bestFor: "Well-defined requirements and regulatory projects",
                             guidance: "Best when you know exactly what needs to be built and have stable requirements. Common in construction, manufacturing, and government projects.",
                             whenToUse: ["Requirements are clear and unlikely to change", "Regulatory compliance is required", "Sequential phases make sense", "Detailed upfront planning is necessary"],
-                            tasks: "120+ comprehensive tasks"
+                            tasks: "110+ comprehensive tasks"
                           },
                           hybrid: {
                             subtitle: "Flexible & Adaptive",
                             bestFor: "Projects with mixed predictability",
                             guidance: "Combines the structure of traditional PM with the flexibility of agile. Perfect when you need planning rigor but also adaptability.",
                             whenToUse: ["Some requirements are known, others will evolve", "Need structure but also flexibility", "Team is familiar with both approaches", "Want iterative delivery within phases"],
-                            tasks: "100+ balanced tasks"
+                            tasks: "Core framework + customize"
                           },
                           agile: {
                             subtitle: "Iterative & Collaborative",
                             bestFor: "Evolving requirements and innovation",
                             guidance: "Embrace change and deliver in short sprints. Ideal for software development and projects where customer feedback drives the product.",
                             whenToUse: ["Requirements will change frequently", "Fast delivery is critical", "Customer collaboration is key", "Team can self-organize"],
-                            tasks: "80+ sprint-focused tasks"
+                            tasks: "Sprint essentials + adapt"
                           }
                         };
 
