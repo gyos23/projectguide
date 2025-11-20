@@ -407,8 +407,8 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Project Foundation',
               tasks: [
-                { id: 'h1', name: 'Develop Vision & Charter', knowledgeArea: 'Integration', status: 'todo' },
-                { id: 'h2', name: 'Form Core Team', knowledgeArea: 'Resource', status: 'todo' }
+                { id: 'h1', name: 'Develop Vision & Charter', knowledgeArea: 'Integration', status: 'todo', guidance: 'Create a clear vision statement and project charter that defines purpose, objectives, and success criteria. Include both strategic goals and tactical deliverables.' },
+                { id: 'h2', name: 'Form Core Team', knowledgeArea: 'Resource', status: 'todo', guidance: 'Assemble a cross-functional team with both traditional PM and agile experience. Include Product Owner, Scrum Master, and key technical leads.' }
               ]
             }
           ]
@@ -420,9 +420,9 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Strategic Planning',
               tasks: [
-                { id: 'h3', name: 'Define Product Roadmap', knowledgeArea: 'Scope', status: 'todo' },
-                { id: 'h4', name: 'Create Release Plan', knowledgeArea: 'Schedule', status: 'todo' },
-                { id: 'h5', name: 'Establish Governance Model', knowledgeArea: 'Integration', status: 'todo' }
+                { id: 'h3', name: 'Define Product Roadmap', knowledgeArea: 'Scope', status: 'todo', guidance: 'Map out releases over time with themes and major features. Balance strategic direction with flexibility for change.' },
+                { id: 'h4', name: 'Create Release Plan', knowledgeArea: 'Schedule', status: 'todo', guidance: 'Plan releases with fixed dates but flexible scope. Define release goals, sprint schedule, and success criteria for each release.' },
+                { id: 'h5', name: 'Establish Governance Model', knowledgeArea: 'Integration', status: 'todo', guidance: 'Define decision-making framework that balances oversight with team autonomy. Set up steering committee meetings and escalation paths.' }
               ]
             }
           ]
@@ -434,10 +434,10 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Sprint/Iteration Planning',
               tasks: [
-                { id: 'h6', name: 'Sprint Planning', knowledgeArea: 'Schedule', status: 'todo' },
-                { id: 'h7', name: 'Daily Standups', knowledgeArea: 'Communications', status: 'todo' },
-                { id: 'h8', name: 'Sprint Review', knowledgeArea: 'Quality', status: 'todo' },
-                { id: 'h9', name: 'Sprint Retrospective', knowledgeArea: 'Integration', status: 'todo' }
+                { id: 'h6', name: 'Sprint Planning', knowledgeArea: 'Schedule', status: 'todo', guidance: 'Select user stories from backlog for the sprint. Define sprint goal, estimate effort, and commit as a team. Typical sprint length: 2-4 weeks.' },
+                { id: 'h7', name: 'Daily Standups', knowledgeArea: 'Communications', status: 'todo', guidance: 'Hold 15-minute daily sync meetings. Each team member shares: what they did yesterday, what they\'ll do today, and any blockers.' },
+                { id: 'h8', name: 'Sprint Review', knowledgeArea: 'Quality', status: 'todo', guidance: 'Demo completed work to stakeholders at end of sprint. Gather feedback and update backlog based on learnings.' },
+                { id: 'h9', name: 'Sprint Retrospective', knowledgeArea: 'Integration', status: 'todo', guidance: 'Reflect on what went well, what didn\'t, and what to improve. Identify 1-3 actionable improvements for next sprint.' }
               ]
             }
           ]
@@ -449,8 +449,8 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Performance Tracking',
               tasks: [
-                { id: 'h10', name: 'Track Velocity & Burndown', knowledgeArea: 'Schedule', status: 'todo' },
-                { id: 'h11', name: 'Manage Backlog', knowledgeArea: 'Scope', status: 'todo' }
+                { id: 'h10', name: 'Track Velocity & Burndown', knowledgeArea: 'Schedule', status: 'todo', guidance: 'Monitor team velocity (story points completed per sprint) and burndown charts. Use data to improve estimation and planning.' },
+                { id: 'h11', name: 'Manage Backlog', knowledgeArea: 'Scope', status: 'todo', guidance: 'Continuously refine and prioritize backlog items. Add new stories, update estimates, and remove obsolete items based on learnings.' }
               ]
             }
           ]
@@ -462,8 +462,8 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Project Closure',
               tasks: [
-                { id: 'h12', name: 'Final Release', knowledgeArea: 'Integration', status: 'todo' },
-                { id: 'h13', name: 'Retrospective & Lessons', knowledgeArea: 'Integration', status: 'todo' }
+                { id: 'h12', name: 'Final Release', knowledgeArea: 'Integration', status: 'todo', guidance: 'Deploy final release to production. Conduct user acceptance testing and ensure all acceptance criteria are met.' },
+                { id: 'h13', name: 'Retrospective & Lessons', knowledgeArea: 'Integration', status: 'todo', guidance: 'Conduct comprehensive project retrospective. Document lessons learned, success patterns, and recommendations for future hybrid projects.' }
               ]
             }
           ]
@@ -483,9 +483,9 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Foundation',
               tasks: [
-                { id: 'a1', name: 'Define Product Vision', knowledgeArea: 'Scope', status: 'todo' },
-                { id: 'a2', name: 'Form Scrum Team', knowledgeArea: 'Resource', status: 'todo' },
-                { id: 'a3', name: 'Create Initial Backlog', knowledgeArea: 'Scope', status: 'todo' }
+                { id: 'a1', name: 'Define Product Vision', knowledgeArea: 'Scope', status: 'todo', guidance: 'Create a compelling product vision that describes the why, what, and who. Keep it concise and inspirational for the team.' },
+                { id: 'a2', name: 'Form Scrum Team', knowledgeArea: 'Resource', status: 'todo', guidance: 'Assemble cross-functional team: Product Owner (prioritization), Scrum Master (facilitation), Development Team (5-9 people, self-organizing).' },
+                { id: 'a3', name: 'Create Initial Backlog', knowledgeArea: 'Scope', status: 'todo', guidance: 'Populate product backlog with user stories. Format: "As a [user], I want [feature] so that [benefit]". Prioritize by business value.' }
               ]
             }
           ]
@@ -497,9 +497,9 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Release Preparation',
               tasks: [
-                { id: 'a4', name: 'Prioritize Product Backlog', knowledgeArea: 'Scope', status: 'todo' },
-                { id: 'a5', name: 'Define Definition of Done', knowledgeArea: 'Quality', status: 'todo' },
-                { id: 'a6', name: 'Estimate User Stories', knowledgeArea: 'Schedule', status: 'todo' }
+                { id: 'a4', name: 'Prioritize Product Backlog', knowledgeArea: 'Scope', status: 'todo', guidance: 'Order backlog items by value to customer. Use MoSCoW (Must have, Should have, Could have, Won\'t have) or similar prioritization framework.' },
+                { id: 'a5', name: 'Define Definition of Done', knowledgeArea: 'Quality', status: 'todo', guidance: 'Create shared understanding of "done": code complete, tested, documented, deployed to staging, meets acceptance criteria.' },
+                { id: 'a6', name: 'Estimate User Stories', knowledgeArea: 'Schedule', status: 'todo', guidance: 'Use Planning Poker or T-shirt sizing to estimate effort. Focus on relative sizing (story points) rather than hours.' }
               ]
             }
           ]
@@ -511,11 +511,11 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Sprint Activities',
               tasks: [
-                { id: 'a7', name: 'Sprint Planning Meeting', knowledgeArea: 'Schedule', status: 'todo' },
-                { id: 'a8', name: 'Daily Scrum', knowledgeArea: 'Communications', status: 'todo' },
-                { id: 'a9', name: 'Development Work', knowledgeArea: 'Integration', status: 'todo' },
-                { id: 'a10', name: 'Sprint Review', knowledgeArea: 'Stakeholder', status: 'todo' },
-                { id: 'a11', name: 'Sprint Retrospective', knowledgeArea: 'Integration', status: 'todo' }
+                { id: 'a7', name: 'Sprint Planning Meeting', knowledgeArea: 'Schedule', status: 'todo', guidance: 'Select stories from backlog to commit for the sprint (typically 2 weeks). Define sprint goal and break stories into tasks.' },
+                { id: 'a8', name: 'Daily Scrum', knowledgeArea: 'Communications', status: 'todo', guidance: '15-minute standup at same time/place daily. Three questions: What did I do yesterday? What will I do today? Any impediments?' },
+                { id: 'a9', name: 'Development Work', knowledgeArea: 'Integration', status: 'todo', guidance: 'Team collaborates to complete sprint backlog. Practice pair programming, code reviews, continuous integration, and test-driven development.' },
+                { id: 'a10', name: 'Sprint Review', knowledgeArea: 'Stakeholder', status: 'todo', guidance: 'Demo working software to stakeholders. Gather feedback, update backlog. Celebrate completed work and adapt based on learnings.' },
+                { id: 'a11', name: 'Sprint Retrospective', knowledgeArea: 'Integration', status: 'todo', guidance: 'Team reflects on process: What went well? What could be improved? What will we commit to changing? Focus on continuous improvement.' }
               ]
             }
           ]
@@ -527,9 +527,9 @@ const ProjectManagementPlatform = () => {
             {
               name: 'Release Activities',
               tasks: [
-                { id: 'a12', name: 'Prepare Release', knowledgeArea: 'Quality', status: 'todo' },
-                { id: 'a13', name: 'Deploy to Production', knowledgeArea: 'Integration', status: 'todo' },
-                { id: 'a14', name: 'Gather Feedback', knowledgeArea: 'Stakeholder', status: 'todo' }
+                { id: 'a12', name: 'Prepare Release', knowledgeArea: 'Quality', status: 'todo', guidance: 'Ensure all acceptance criteria met, regression testing complete, documentation updated, and release notes prepared.' },
+                { id: 'a13', name: 'Deploy to Production', knowledgeArea: 'Integration', status: 'todo', guidance: 'Execute deployment plan with rollback strategy. Monitor system health post-deployment. Communicate release to stakeholders.' },
+                { id: 'a14', name: 'Gather Feedback', knowledgeArea: 'Stakeholder', status: 'todo', guidance: 'Collect user feedback through surveys, analytics, support tickets. Use insights to refine product backlog and prioritize next release.' }
               ]
             }
           ]
@@ -1307,7 +1307,13 @@ const ProjectManagementPlatform = () => {
               >
                 Start Your First Project
               </button>
-              <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all text-lg font-medium">
+              <button
+                onClick={() => {
+                  navigateTo('projects');
+                  setTimeout(() => startTutorial(), 500);
+                }}
+                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all text-lg font-medium"
+              >
                 Watch Demo
               </button>
             </div>
@@ -3085,7 +3091,7 @@ const ProjectManagementPlatform = () => {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(documentTemplates).map(([templateName, template]) => (
+                {Object.entries(getDocumentTemplates()).map(([templateName, template]) => (
                   <div key={templateName} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
                     <h4 className="font-semibold text-gray-900 mb-2">{templateName}</h4>
                     <p className="text-sm text-gray-600 mb-3">{template.description}</p>
