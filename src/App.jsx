@@ -797,53 +797,119 @@ const ProjectManagementPlatform = () => {
   };
 
   // Document Templates
-  const documentTemplates = {
-    'Project Charter': {
-      description: 'Formal document that authorizes the project',
-      sections: ['Project Purpose', 'Objectives', 'Success Criteria', 'High-Level Requirements', 'Assumptions & Constraints', 'Budget & Timeline']
-    },
-    'Business Case': {
-      description: 'Justification for initiating the project',
-      sections: ['Executive Summary', 'Problem Statement', 'Proposed Solution', 'Cost-Benefit Analysis', 'Risk Assessment', 'Recommendation']
-    },
-    'WBS': {
-      description: 'Work Breakdown Structure template',
-      sections: ['Level 1 - Project', 'Level 2 - Major Deliverables', 'Level 3 - Work Packages', 'Level 4 - Activities', 'WBS Dictionary']
-    },
-    'Risk Register': {
-      description: 'Document to track and manage project risks',
-      sections: ['Risk ID', 'Risk Description', 'Probability', 'Impact', 'Risk Score', 'Mitigation Strategy', 'Owner', 'Status']
-    },
-    'Stakeholder Register': {
-      description: 'List of all project stakeholders',
-      sections: ['Name', 'Role', 'Contact Information', 'Requirements', 'Expectations', 'Influence Level', 'Engagement Strategy']
-    },
-    'Communications Plan': {
-      description: 'How project information will be communicated',
-      sections: ['Stakeholder', 'Information Needs', 'Frequency', 'Method', 'Owner', 'Distribution List']
-    }
+  // Methodology-specific document templates
+  const getDocumentTemplates = () => {
+    const templates = {
+      traditional: {
+        'Project Charter': {
+          description: 'Formal document that authorizes the project and gives the PM authority',
+          sections: ['Project Purpose & Justification', 'Measurable Project Objectives', 'Success Criteria', 'High-Level Requirements', 'High-Level Risks', 'Summary Budget', 'Summary Milestone Schedule', 'Project Approval Requirements', 'Assigned Project Manager & Authority Level', 'Sponsor Authorization']
+        },
+        'Project Management Plan': {
+          description: 'Comprehensive document integrating all subsidiary plans',
+          sections: ['Project Scope Management', 'Schedule Management', 'Cost Management', 'Quality Management', 'Resource Management', 'Communications Management', 'Risk Management', 'Procurement Management', 'Stakeholder Engagement', 'Change Management Process', 'Configuration Management', 'Baseline Information']
+        },
+        'Requirements Traceability Matrix': {
+          description: 'Links requirements to deliverables and test cases',
+          sections: ['Requirement ID', 'Requirement Description', 'Business Need', 'Project Objective', 'WBS Deliverable', 'Product Design', 'Development', 'Test Case', 'Status']
+        },
+        'Change Request Log': {
+          description: 'Tracks all project change requests and their status',
+          sections: ['CR Number', 'Date Submitted', 'Requestor', 'Description of Change', 'Reason for Change', 'Impact on Scope', 'Impact on Schedule', 'Impact on Budget', 'Priority', 'Status', 'Approval Date', 'Approved By']
+        },
+        'Lessons Learned Register': {
+          description: 'Captures knowledge gained throughout the project',
+          sections: ['Date', 'Phase', 'Category (Process/People/Technology)', 'What Went Well', 'What Could Be Improved', 'Root Cause', 'Recommendation', 'Impact', 'Action Items', 'Responsible Party']
+        },
+        'Project Closure Report': {
+          description: 'Formal document signaling project completion',
+          sections: ['Project Summary', 'Final Deliverables', 'Objectives Achievement', 'Budget Performance', 'Schedule Performance', 'Quality Metrics', 'Key Accomplishments', 'Outstanding Issues', 'Lessons Learned', 'Final Sign-off']
+        }
+      },
+      hybrid: {
+        'Product Roadmap': {
+          description: 'Strategic view of product evolution over time',
+          sections: ['Vision & Strategy', 'Timeline (Quarters/Releases)', 'Themes & Epics', 'Release 1 Goals', 'Release 2 Goals', 'Release 3 Goals', 'Dependencies', 'Success Metrics', 'Key Stakeholders', 'Risk & Assumptions']
+        },
+        'Release Plan': {
+          description: 'Detailed plan for specific product release',
+          sections: ['Release Number & Name', 'Release Goals', 'Scope (Features/Stories)', 'Sprint Schedule', 'Team Capacity', 'Release Criteria', 'Dependencies', 'Risks', 'Stakeholder Communication', 'Go-Live Strategy']
+        },
+        'Sprint Planning Template': {
+          description: 'Planning document for each sprint iteration',
+          sections: ['Sprint Number', 'Sprint Duration', 'Sprint Goal', 'Team Capacity', 'Stories Selected', 'Story Points', 'Acceptance Criteria', 'Dependencies', 'Definition of Done', 'Team Commitments']
+        },
+        'Iteration Report': {
+          description: 'Summary of iteration results and metrics',
+          sections: ['Iteration Number', 'Duration', 'Planned vs Actual', 'Velocity', 'Stories Completed', 'Stories Incomplete', 'Burndown Chart Summary', 'Quality Metrics', 'Blockers Encountered', 'Key Decisions', 'Next Iteration Focus']
+        },
+        'Governance Board Report': {
+          description: 'Status report for steering committee meetings',
+          sections: ['Executive Summary', 'Progress Overview', 'Release Status', 'Budget Status', 'Key Risks & Issues', 'Change Requests', 'Resource Needs', 'Decisions Required', 'Upcoming Milestones', 'Recommendations']
+        },
+        'Retrospective Summary': {
+          description: 'Team reflection on process improvements',
+          sections: ['Iteration Period', 'What Went Well', 'What Didn\'t Go Well', 'Puzzles/Questions', 'Action Items', 'Owner', 'Due Date', 'Previous Action Status', 'Metrics Reviewed', 'Team Commitments']
+        }
+      },
+      agile: {
+        'Product Backlog': {
+          description: 'Prioritized list of features and requirements',
+          sections: ['Backlog Item ID', 'User Story', 'As a [role], I want [feature] so that [benefit]', 'Acceptance Criteria', 'Story Points', 'Priority (MoSCoW)', 'Business Value', 'Sprint Assignment', 'Status', 'Notes']
+        },
+        'Sprint Backlog': {
+          description: 'Work items committed for the current sprint',
+          sections: ['Sprint Number & Goal', 'User Story', 'Tasks', 'Story Points', 'Task Owner', 'Estimated Hours', 'Actual Hours', 'Status', 'Blockers', 'Daily Progress']
+        },
+        'User Story Template': {
+          description: 'Standard format for writing user stories',
+          sections: ['Story Title', 'As a [user type]', 'I want to [action]', 'So that [benefit/value]', 'Acceptance Criteria (Given/When/Then)', 'Story Points', 'Priority', 'Dependencies', 'Technical Notes', 'Definition of Done Checklist']
+        },
+        'Sprint Retrospective': {
+          description: 'Team reflection and continuous improvement session',
+          sections: ['Sprint Number', 'Date', 'Attendees', 'What Went Well (Keep Doing)', 'What Didn\'t Go Well (Stop Doing)', 'What Should We Try (Start Doing)', 'Action Items', 'Owner', 'Due Date', 'Previous Actions Review', 'Team Mood Check']
+        },
+        'Sprint Review Notes': {
+          description: 'Demo meeting outcomes and stakeholder feedback',
+          sections: ['Sprint Number', 'Date', 'Demo Attendees', 'Stories Demoed', 'Acceptance Status', 'Stakeholder Feedback', 'Change Requests', 'Questions Raised', 'Next Sprint Preview', 'Action Items']
+        },
+        'Definition of Done': {
+          description: 'Shared understanding of what "complete" means',
+          sections: ['Code Complete Checklist', 'Code reviewed by peer', 'Unit tests written and passing', 'Integration tests passing', 'Documentation updated', 'Acceptance criteria met', 'Deployed to test environment', 'Product Owner acceptance', 'No known defects', 'Sprint-Specific Additions']
+        }
+      }
+    };
+
+    return templates[selectedMethodology] || templates.traditional;
   };
 
   const generateTemplate = (templateName) => {
-    const template = documentTemplates[templateName];
+    const templates = getDocumentTemplates();
+    const template = templates[templateName];
     if (!template) return '';
 
+    const methodologyName = methodologies[selectedMethodology]?.name || 'Project Management';
+
     let content = `# ${templateName}\n\n`;
+    content += `**Methodology:** ${methodologyName}\n`;
     content += `**Description:** ${template.description}\n\n`;
-    content += `**Project:** [Your Project Name]\n`;
+    content += `**Project:** ${currentProjectId && projects[currentProjectId] ? projects[currentProjectId].name : '[Your Project Name]'}\n`;
     content += `**Date:** ${new Date().toLocaleDateString()}\n`;
     content += `**Prepared by:** [Your Name]\n\n`;
+    content += `---\n\n`;
 
     template.sections.forEach((section, index) => {
-      content += `## ${index + 1}. ${section}\n\n`;
-      content += `[Add content for ${section}]\n\n`;
+      content += `## ${section}\n\n`;
+      content += `[Add your content here]\n\n`;
     });
 
-    content += `---\n`;
+    content += `---\n\n`;
     content += `**Document Control**\n`;
     content += `- Version: 1.0\n`;
     content += `- Last Updated: ${new Date().toLocaleDateString()}\n`;
     content += `- Next Review: [Date]\n`;
+    content += `- Status: Draft\n\n`;
+    content += `**Tip:** This template is optimized for ${methodologyName} projects. Customize sections as needed for your specific context.\n`;
 
     return content;
   };
