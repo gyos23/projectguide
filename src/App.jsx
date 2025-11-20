@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2, HelpCircle } from 'lucide-react';
+import introJs from 'intro.js';
+import 'intro.js/introjs.css';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -46,6 +48,10 @@ const ProjectManagementPlatform = () => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [projectFormData, setProjectFormData] = useState({ name: '', description: '' });
   const [editingProjectId, setEditingProjectId] = useState(null);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(() => {
+    const seen = localStorage.getItem('projectguide_tutorial_seen');
+    return seen === 'true';
+  });
 
   // Methodology configurations
   const methodologies = {
@@ -685,6 +691,101 @@ const ProjectManagementPlatform = () => {
       setNavigationHistory(newHistory);
       setCurrentStep(previousStep);
     }
+  };
+
+  // Tutorial function
+  const startTutorial = () => {
+    const intro = introJs();
+
+    // Define tutorial steps based on current view
+    const steps = [];
+
+    if (currentStep === 'projects') {
+      // Projects page tutorial
+      steps.push(
+        {
+          title: 'Welcome to ProjectGuide! 🎓',
+          intro: 'The only PM tool that teaches you best practices while you work. Let\'s take a quick tour to get you started.'
+        },
+        {
+          element: document.querySelector('[data-tutorial="create-project"]'),
+          title: 'Create Your First Project',
+          intro: 'Start by creating a new project. You\'ll choose a methodology that fits your project needs.',
+          position: 'bottom'
+        }
+      );
+    } else if (currentStep === 'dashboard') {
+      // Dashboard tutorial
+      steps.push(
+        {
+          title: 'Your Project Dashboard 📊',
+          intro: 'This is your command center for managing your project using proven methodologies.'
+        },
+        {
+          element: document.querySelector('[data-tutorial="phases"]'),
+          title: 'Navigate Phases',
+          intro: 'Your project is organized into phases. Each phase represents a key stage in your project lifecycle.',
+          position: 'right'
+        },
+        {
+          element: document.querySelector('[data-tutorial="tasks"]'),
+          title: 'Complete Tasks',
+          intro: 'Each phase contains specific tasks based on PMI standards. Click tasks to mark them complete and track your progress.',
+          position: 'top'
+        },
+        {
+          element: document.querySelector('[data-tutorial="view-modes"]'),
+          title: 'Switch Views',
+          intro: 'Toggle between Board, Timeline, Team, and Analytics views to see your project from different perspectives.',
+          position: 'bottom'
+        },
+        {
+          element: document.querySelector('[data-tutorial="templates"]'),
+          title: 'Use Templates',
+          intro: 'Access methodology-specific document templates to create professional project artifacts.',
+          position: 'bottom'
+        },
+        {
+          element: document.querySelector('[data-tutorial="progress"]'),
+          title: 'Track Progress',
+          intro: 'Monitor your completion percentage and see real-time analytics of your project health.',
+          position: 'left'
+        },
+        {
+          element: document.querySelector('[data-tutorial="guidance"]'),
+          title: 'Get Guidance',
+          intro: 'Click on any task to see detailed guidance on how to complete it according to best practices.',
+          position: 'top'
+        }
+      );
+    }
+
+    // Configure intro.js
+    intro.setOptions({
+      steps: steps.filter(step => !step.element || step.element), // Filter out steps where element doesn't exist
+      showProgress: true,
+      showBullets: true,
+      exitOnOverlayClick: false,
+      dontShowAgain: true,
+      dontShowAgainLabel: 'Don\'t show this again',
+      nextLabel: 'Next →',
+      prevLabel: '← Back',
+      doneLabel: 'Got it! ✓',
+      tooltipClass: 'customTooltip',
+      highlightClass: 'customHighlight'
+    });
+
+    intro.oncomplete(() => {
+      localStorage.setItem('projectguide_tutorial_seen', 'true');
+      setHasSeenTutorial(true);
+    });
+
+    intro.onexit(() => {
+      localStorage.setItem('projectguide_tutorial_seen', 'true');
+      setHasSeenTutorial(true);
+    });
+
+    intro.start();
   };
 
   const toggleTask = (taskId) => {
@@ -1463,6 +1564,13 @@ const ProjectManagementPlatform = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <button
+                  onClick={startTutorial}
+                  className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                  title="Take a Tour"
+                >
+                  <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </button>
+                <button
                   onClick={() => setDarkMode(!darkMode)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   aria-label="Toggle dark mode"
@@ -1497,6 +1605,7 @@ const ProjectManagementPlatform = () => {
               setShowProjectModal(true);
             }}
             className="w-full md:w-auto mb-8 flex items-center justify-center px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg font-medium"
+            data-tutorial="create-project"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create New Project
@@ -2134,7 +2243,7 @@ const ProjectManagementPlatform = () => {
               </button>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-2">
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-2" data-tutorial="view-modes">
                 <button
                   onClick={() => setViewMode('board')}
                   className={`px-3 py-1 rounded ${viewMode === 'board' ? 'bg-white shadow-sm' : ''}`}
@@ -2154,6 +2263,21 @@ const ProjectManagementPlatform = () => {
                 title="View Dashboard"
               >
                 <BarChart3 className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setShowTemplateModal(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                title="Document Templates"
+                data-tutorial="templates"
+              >
+                <FileText className="h-5 w-5 text-gray-600" />
+              </button>
+              <button
+                onClick={startTutorial}
+                className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Take a Tour"
+              >
+                <HelpCircle className="h-5 w-5 text-blue-600" />
               </button>
               <button
                 onClick={() => setShowExportModal(true)}
@@ -2194,13 +2318,13 @@ const ProjectManagementPlatform = () => {
               </div>
             )}
 
-            <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4" data-tutorial="progress">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-700">Overall Progress</span>
                 <span className="text-lg font-bold text-blue-700">{stats.percentage}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
+                <div
                   className="bg-blue-600 h-3 rounded-full transition-all"
                   style={{ width: `${stats.percentage}%` }}
                 />
@@ -2221,7 +2345,7 @@ const ProjectManagementPlatform = () => {
             </div>
 
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Project Phases</h3>
-            <nav className="space-y-1">
+            <nav className="space-y-1" data-tutorial="phases">
               {methodology.phases.map((phase) => {
                 const phaseTasks = phase.processGroups.flatMap(g => g.tasks);
                 const phaseCompleted = phaseTasks.filter(t => tasks[t.id]?.status === 'completed').length;
@@ -2302,9 +2426,10 @@ const ProjectManagementPlatform = () => {
                   <p className="text-gray-600">Complete the following tasks and deliverables</p>
                 </div>
                 <div className="flex space-x-2">
-                  <button 
+                  <button
                     onClick={() => setShowGuidance(!showGuidance)}
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    data-tutorial="guidance"
                   >
                     <BookOpen className="h-4 w-4 mr-2" />
                     {showGuidance ? 'Hide' : 'Show'} Guidance
@@ -2426,7 +2551,7 @@ const ProjectManagementPlatform = () => {
 
             {/* Board View */}
             {viewMode === 'board' && (
-              <div className="space-y-6">
+              <div className="space-y-6" data-tutorial="tasks">
                 {currentPhaseData.processGroups.map((group, idx) => {
                   const filteredTasks = group.tasks.filter(task => {
                     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase());
