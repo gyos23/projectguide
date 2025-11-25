@@ -1913,6 +1913,11 @@ const ProjectManagementPlatform = () => {
 
                     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                       {Object.entries(methodologies).map(([key, methodology]) => {
+                        // Safety check: ensure methodology object exists
+                        if (!methodology || !methodology.name) {
+                          return null;
+                        }
+
                         const methodologyDetails = {
                           traditional: {
                             subtitle: "Predictive & Sequential",
@@ -1938,6 +1943,12 @@ const ProjectManagementPlatform = () => {
                         };
 
                         const details = methodologyDetails[key];
+
+                        // Safety check: ensure details exist for this methodology
+                        if (!details) {
+                          return null;
+                        }
+
                         const isSelected = selectedMethodology === key;
 
                         return (
@@ -2103,6 +2114,11 @@ const ProjectManagementPlatform = () => {
           {/* Methodology Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             {Object.entries(methodologies).map(([key, method]) => {
+              // Safety check: ensure method object exists
+              if (!method || !method.name) {
+                return null;
+              }
+
               const methodologyDetails = {
                 traditional: {
                   subtitle: "Predictive & Sequential",
@@ -2131,6 +2147,11 @@ const ProjectManagementPlatform = () => {
               };
 
               const details = methodologyDetails[key];
+
+              // Safety check: ensure details exist for this methodology
+              if (!details) {
+                return null;
+              }
 
               return (
                 <div
