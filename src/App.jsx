@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2, HelpCircle } from 'lucide-react';
+import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2, HelpCircle, PlayCircle } from 'lucide-react';
 import introJs from 'intro.js';
 import 'intro.js/introjs.css';
+import { getDemoData } from './demoData';
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -715,47 +716,63 @@ const ProjectManagementPlatform = () => {
         }
       );
     } else if (currentStep === 'dashboard') {
-      // Dashboard tutorial
+      // Dashboard tutorial - Enhanced for demo projects
+      const isDemo = currentProjectId && projects[currentProjectId]?.isDemo;
+
       steps.push(
         {
-          title: 'Your Project Dashboard 📊',
-          intro: 'This is your command center for managing your project using proven methodologies.'
+          title: isDemo ? 'Welcome to the Demo! 🎯' : 'Your Project Dashboard 📊',
+          intro: isDemo
+            ? 'You\'re exploring a realistic website redesign project. This demo showcases all features with sample data including completed tasks, team assignments, and notes. Feel free to explore!'
+            : 'This is your command center for managing your project using proven methodologies.'
         },
         {
           element: document.querySelector('[data-tutorial="phases"]'),
           title: 'Navigate Phases',
-          intro: 'Your project is organized into phases. Each phase represents a key stage in your project lifecycle.',
+          intro: isDemo
+            ? 'This demo project is currently in the Executing phase. You can see completed tasks in earlier phases and active work in progress. Try navigating between phases to see the full project lifecycle.'
+            : 'Your project is organized into phases. Each phase represents a key stage in your project lifecycle.',
           position: 'right'
         },
         {
           element: document.querySelector('[data-tutorial="tasks"]'),
           title: 'Complete Tasks',
-          intro: 'Each phase contains specific tasks based on PMI standards. Click tasks to mark them complete and track your progress.',
+          intro: isDemo
+            ? 'Many tasks are already completed or in progress to show you how tracking works. Click any task to see notes, due dates, and assignments. Try toggling a task status to see how it updates!'
+            : 'Each phase contains specific tasks based on PMI standards. Click tasks to mark them complete and track your progress.',
           position: 'top'
         },
         {
           element: document.querySelector('[data-tutorial="view-modes"]'),
           title: 'Switch Views',
-          intro: 'Toggle between Board, Timeline, Team, and Analytics views to see your project from different perspectives.',
+          intro: 'Toggle between Board and Timeline views to see your project from different perspectives. Timeline view shows tasks on a calendar.',
           position: 'bottom'
         },
         {
           element: document.querySelector('[data-tutorial="templates"]'),
           title: 'Use Templates',
-          intro: 'Access methodology-specific document templates to create professional project artifacts.',
+          intro: 'Access professional document templates including Project Charter, Risk Register, and more. These templates help you create industry-standard artifacts.',
           position: 'bottom'
         },
         {
           element: document.querySelector('[data-tutorial="progress"]'),
           title: 'Track Progress',
-          intro: 'Monitor your completion percentage and see real-time analytics of your project health.',
+          intro: isDemo
+            ? 'This demo project is about 60% complete. The progress updates automatically as you complete tasks. Click the Dashboard button in the header to see detailed analytics!'
+            : 'Monitor your completion percentage and see real-time analytics of your project health.',
           position: 'left'
         },
         {
           element: document.querySelector('[data-tutorial="guidance"]'),
           title: 'Get Guidance',
-          intro: 'Click on any task to see detailed guidance on how to complete it according to best practices.',
+          intro: 'Click on any task to see detailed guidance on how to complete it according to PMBOK best practices. This is perfect for learning or certification prep!',
           position: 'top'
+        },
+        {
+          title: isDemo ? 'Ready to Start Your Own?' : 'You\'re All Set!',
+          intro: isDemo
+            ? 'When you\'re ready, click "All Projects" or "Switch Project" to create your own project. All your demo explorations stay here until you close your browser. Enjoy exploring ProjectGuide!'
+            : 'You\'re ready to manage your project! Remember, every task includes guidance to help you succeed. Good luck!'
         }
       );
     }
@@ -846,6 +863,45 @@ const ProjectManagementPlatform = () => {
     setCurrentProjectId(projectId);
     setSelectedMethodology(methodology);
     navigateTo('dashboard');
+  };
+
+  const loadDemoProject = () => {
+    const demoData = getDemoData();
+    const projectId = 'demo-' + Date.now();
+
+    const demoProject = {
+      id: projectId,
+      name: demoData.project.name,
+      description: demoData.project.description,
+      methodology: demoData.project.methodology,
+      createdAt: demoData.project.createdAt,
+      lastModified: new Date().toISOString(),
+      selectedPhase: 3, // Start at Executing phase to show activity
+      tasks: demoData.tasks,
+      taskNotes: demoData.taskNotes,
+      taskDueDates: demoData.taskDueDates,
+      taskAssignees: demoData.taskAssignees,
+      expandedGroups: {},
+      teamMembers: demoData.teamMembers,
+      unnecessaryTasks: {},
+      isDemo: true
+    };
+
+    setProjects(prev => ({
+      ...prev,
+      [projectId]: demoProject
+    }));
+
+    setCurrentProjectId(projectId);
+    setSelectedMethodology(demoProject.methodology);
+    navigateTo('dashboard');
+
+    // Start tutorial automatically for demo users
+    setTimeout(() => {
+      if (!hasSeenTutorial) {
+        startTutorial();
+      }
+    }, 1000);
   };
 
   const selectProject = (projectId) => {
@@ -1276,6 +1332,13 @@ const ProjectManagementPlatform = () => {
                   )}
                 </button>
                 <button
+                  onClick={loadDemoProject}
+                  className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 dark:border-blue-400 dark:text-blue-400 transition-colors font-medium"
+                >
+                  <PlayCircle className="h-5 w-5" />
+                  <span>Try Demo</span>
+                </button>
+                <button
                   onClick={() => navigateTo('projects')}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
@@ -1300,7 +1363,7 @@ const ProjectManagementPlatform = () => {
               Whether you're a seasoned PM or just starting out, we'll help you deliver successful projects using 
               proven methodologies and best practices.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
                 onClick={() => navigateTo('projects')}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 text-lg font-medium shadow-lg"
@@ -1308,15 +1371,16 @@ const ProjectManagementPlatform = () => {
                 Start Your First Project
               </button>
               <button
-                onClick={() => {
-                  navigateTo('projects');
-                  setTimeout(() => startTutorial(), 500);
-                }}
-                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all text-lg font-medium"
+                onClick={loadDemoProject}
+                className="flex items-center space-x-2 border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition-all text-lg font-medium"
               >
-                Watch Demo
+                <PlayCircle className="h-6 w-6" />
+                <span>Try Interactive Demo</span>
               </button>
             </div>
+            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+              🎯 Explore a live website redesign project with realistic data
+            </p>
           </div>
         </div>
 
@@ -2236,7 +2300,14 @@ const ProjectManagementPlatform = () => {
               <div className="flex items-center space-x-4">
                 <div className="text-2xl">{methodology.icon}</div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">{methodology.name}</h1>
+                  <div className="flex items-center space-x-2">
+                    <h1 className="text-xl font-bold text-gray-900">{methodology.name}</h1>
+                    {currentProjectId && projects[currentProjectId]?.isDemo && (
+                      <span className="px-2 py-1 text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full">
+                        DEMO
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-500">Project Management Platform</p>
                 </div>
               </div>
@@ -2304,6 +2375,19 @@ const ProjectManagementPlatform = () => {
             {/* Current Project Info */}
             {currentProjectId && projects[currentProjectId] && (
               <div className="mb-4">
+                {projects[currentProjectId].isDemo && (
+                  <div className="mb-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-start">
+                      <PlayCircle className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-blue-900 mb-1">Demo Project</p>
+                        <p className="text-xs text-blue-700">
+                          Explore a realistic website redesign project with sample data, team members, and completed tasks.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-900 mb-1">
