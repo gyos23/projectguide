@@ -1,8 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import { Calendar, CheckSquare, LayoutGrid, BookOpen, ChevronRight, ChevronDown, Search, Settings, BarChart3, Users, FileText, Clock, AlertCircle, Moon, Sun, ChevronLeft, XCircle, FolderOpen, Plus, Trash2, Edit2, HelpCircle, PlayCircle } from 'lucide-react';
 import introJs from 'intro.js';
 import 'intro.js/introjs.css';
 import { getDemoData } from './demoData';
+
+// Error Boundary Component
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
+            <p className="text-gray-600 mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <button
+              onClick={() => {
+                try {
+                  localStorage.removeItem('projectGuideData');
+                } catch (e) {
+                  console.error('Could not clear localStorage:', e);
+                }
+                window.location.reload();
+              }}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Clear Data & Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const ProjectManagementPlatform = () => {
   const [currentStep, setCurrentStep] = useState('landing');
@@ -49,9 +96,14 @@ const ProjectManagementPlatform = () => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [projectFormData, setProjectFormData] = useState({ name: '', description: '' });
   const [editingProjectId, setEditingProjectId] = useState(null);
+  const [renderError, setRenderError] = useState(null);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(() => {
-    const seen = localStorage.getItem('projectguide_tutorial_seen');
-    return seen === 'true';
+    try {
+      const seen = localStorage.getItem('projectguide_tutorial_seen');
+      return seen === 'true';
+    } catch (error) {
+      return false;
+    }
   });
 
   // Methodology configurations
@@ -1304,6 +1356,28 @@ const ProjectManagementPlatform = () => {
     setTeamMembers(prev => prev.filter(m => m.id !== memberId));
   };
 
+  // Error boundary
+  if (renderError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
+          <p className="text-gray-600 mb-4">{renderError.message || 'An unexpected error occurred'}</p>
+          <button
+            onClick={() => {
+              localStorage.removeItem('projectGuideData');
+              window.location.reload();
+            }}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Clear Data & Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Landing Page
   if (currentStep === 'landing') {
     return (
@@ -1694,7 +1768,7 @@ const ProjectManagementPlatform = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projectsList.map(project => (
+              {projectsList.filter(project => project && project.id && project.name).map(project => (
                 <div
                   key={project.id}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 cursor-pointer border border-gray-200 dark:border-gray-700"
@@ -2264,6 +2338,15 @@ const ProjectManagementPlatform = () => {
   }
 
   // Main Dashboard
+  // Validate we have required data for dashboard
+  if (currentStep === 'dashboard') {
+    if (!currentProjectId || !projects[currentProjectId]) {
+      // Redirect to appropriate page if dashboard state is invalid
+      setCurrentStep(Object.keys(projects).length > 0 ? 'projects' : 'landing');
+      return null;
+    }
+  }
+
   const methodology = methodologies[selectedMethodology];
 
   // If methodology is not loaded yet, show loading state
@@ -2278,7 +2361,7 @@ const ProjectManagementPlatform = () => {
     );
   }
 
-  const currentPhaseData = selectedPhase ? methodology.phases.find(p => p.id === selectedPhase) : methodology.phases[0];
+  const currentPhaseData = selectedPhase ? methodology.phases?.find(p => p.id === selectedPhase) : methodology.phases?.[0];
 
   const getProgressStats = () => {
     const allTasks = Object.values(tasks);
@@ -3642,4 +3725,11 @@ const ProjectManagementPlatform = () => {
   );
 };
 
-export default ProjectManagementPlatform;
+// Wrap with ErrorBoundary
+const App = () => (
+  <ErrorBoundary>
+    <ProjectManagementPlatform />
+  </ErrorBoundary>
+);
+
+export default App;
